@@ -14,6 +14,11 @@ import org.bukkit.conversations.ConversationContext
 import org.bukkit.conversations.Prompt
 import org.bukkit.conversations.StringPrompt
 import org.bukkit.entity.Player
+import java.util.logging.Logger
+
+class MctContext(
+    val logger: Logger,
+)
 
 class CommandContext(
     val sender: Player,
@@ -23,6 +28,15 @@ class CommandContext(
 )
 
 abstract class MctCommand : CliktCommand() {
+
+    abstract val mctContext: MctContext
+
+    final override fun run() {
+        mctContext.run()
+    }
+
+    open fun MctContext.run() = Unit
+
     /**
      * Copy of [main] without exitProcess
      */
@@ -33,7 +47,8 @@ abstract class MctCommand : CliktCommand() {
         } catch (e: PrintHelpMessage) {
             echo(e.command.getFormattedHelp())
         } catch (e: PrintCompletionMessage) {
-            val s = if (e.forceUnixLineEndings) "\n" else currentContext.console.lineSeparator
+            val s =
+                if (e.forceUnixLineEndings) "\n" else currentContext.console.lineSeparator
             echo(e.message, lineSeparator = s)
         } catch (e: PrintMessage) {
             echo(e.message)
@@ -47,11 +62,11 @@ abstract class MctCommand : CliktCommand() {
     }
 }
 
-class MctConsole(val context: CommandContext) : CliktConsole {
+class MctConsole(val player: Player) : CliktConsole {
     override val lineSeparator: String = "\n"
 
     override fun print(text: String, error: Boolean) {
-        context.sender.sendMessage(text)
+        player.sendMessage(text)
     }
 
     override fun promptForLine(prompt: String, hideInput: Boolean): String? {
@@ -60,7 +75,7 @@ class MctConsole(val context: CommandContext) : CliktConsole {
 
 }
 
-class MctPrompt(val text: String): StringPrompt() {
+class MctPrompt(val text: String) : StringPrompt() {
     override fun getPromptText(context: ConversationContext): String {
         return text
     }

@@ -26,15 +26,13 @@ class ToolboxPlugin : JavaPlugin() {
         args: Array<out String>
     ): Boolean {
         if (sender !is Player) return false
-        val context = CommandContext(
-            sender = sender, command = command, label = label, args = args
-        )
+        val mctContext = MctContext(logger = logger)
         val mctCommand = when (command.name.toLowerCase(Locale.US)) {
-            "mct" -> Mct()
+            "mct" -> Mct(mctContext)
             else -> return false
         }
         mctCommand.context {
-            console = MctConsole(context)
+            console = MctConsole(sender)
         }
         mctCommand.mct(args.asList())
         return true

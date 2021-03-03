@@ -2,19 +2,18 @@ package ca.allanwang.minecraft.toolbox
 
 import com.github.ajalt.clikt.core.subcommands
 
-class Mct : MctCommand() {
+class Mct(override val mctContext: MctContext) : MctCommand() {
 
     init {
-        subcommands(Help())
+        subcommands(Help(mctContext))
     }
-
-    override fun run() = Unit
 
 }
 
-class Help : MctCommand() {
+class Help(override val mctContext: MctContext) : MctCommand() {
 
-    override fun run() {
+    override fun MctContext.run() {
+        logger.info("Sent help")
         echo("Sent help")
     }
 }
