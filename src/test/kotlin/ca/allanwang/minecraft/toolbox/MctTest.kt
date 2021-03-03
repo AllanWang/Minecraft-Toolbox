@@ -6,6 +6,6 @@ class MctTest {
 
     @Test
     fun mct() {
-        Mct().main(listOf())
+        Mct(mctTestContext()).main(listOf("help"))
     }
 }
