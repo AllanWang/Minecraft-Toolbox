@@ -1,3 +1,13 @@
 name: Minecraft_Toolbox
 main: ca.allanwang.minecraft.toolbox.ToolboxPlugin
-version: 1.0
+description: A bit of everything
+version: 0.1
+author: Allan Wang
+
+commands:
+  mct:
+    description: Minecraft Toolbox
+    usage: Use /mct help for help.
+  mct help:
+    description: Minecraft Toolbox Help
+    usage: Use /mct help for help.
