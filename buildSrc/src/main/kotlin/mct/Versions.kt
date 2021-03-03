@@ -7,11 +7,11 @@ object Versions {
     // https://kotlinlang.org/docs/reference/using-gradle.html
     const val kotlin = "1.4.21"
 
-    // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-    const val slf4j = "1.7.30"
+    // https://hub.spigotmc.org/nexus/content/repositories/public/org/bukkit/bukkit/maven-metadata.xml
+    const val bukkit = "1.15.2-R0.1-SNAPSHOT"
 
-    // https://github.com/google/flogger
-    const val flogger = "0.5.1"
+    // https://github.com/ajalt/clikt/releases
+    const val clikt = "3.1.0"
 
     // https://github.com/google/dagger/releases/tag/dagger-2.28.3
     const val dagger = "2.28.3"

@@ -1,4 +1,4 @@
-import java.util.Properties
+import java.util.*
 
 plugins {
     kotlin("jvm") version mct.Versions.kotlin
@@ -15,10 +15,8 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib"))
-    // https://hub.spigotmc.org/nexus/content/repositories/public/org/bukkit/bukkit/maven-metadata.xml
-    compileOnly("org.bukkit:bukkit:1.15.2-R0.1-SNAPSHOT")
-    // https://github.com/ajalt/clikt/releases
-    implementation("com.github.ajalt.clikt:clikt:3.1.0")
+    compileOnly(mct.Dependencies.bukkit)
+    implementation(mct.Dependencies.clikt)
 
     testImplementation(mct.Dependencies.hamkrest)
     testImplementation(kotlin("test-junit5"))
@@ -35,7 +33,9 @@ val fatJar = task("fatJar", type = Jar::class) {
     archiveBaseName.set("${project.name}-Release")
     archiveVersion.set("")
     exclude("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA")
-    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    from(
+        configurations.runtimeClasspath.get()
+            .map { if (it.isDirectory) it else zipTree(it) })
     with(tasks.jar.get() as CopySpec)
 }
 
