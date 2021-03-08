@@ -1,49 +1,51 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.*
 
 plugins {
     kotlin("jvm") version mct.Versions.kotlin
+    kotlin("kapt") version mct.Versions.kotlin
 }
-
-group = "ca.allanwang"
-version = mct.Versions.mctVersion
 
 repositories {
     jcenter()
-    maven("https://oss.sonatype.org/content/repositories/snapshots/")
-    maven("https://hub.spigotmc.org/nexus/content/repositories/public/")
 }
 
-dependencies {
-    implementation(kotlin("stdlib"))
-    compileOnly(mct.Dependencies.bukkit)
-    implementation(mct.Dependencies.clikt)
+subprojects {
+    if (projectDir.name == "buildSrc") {
+        return@subprojects
+    }
 
-    testImplementation(mct.Dependencies.hamkrest)
-    testImplementation(kotlin("test-junit5"))
-    testImplementation(mct.Dependencies.junit("api"))
-    testImplementation(mct.Dependencies.junit("params"))
-    testRuntimeOnly(mct.Dependencies.junit("engine"))
-}
+    group = "ca.allanwang"
+    version = mct.Versions.mctVersion
 
-tasks.test {
-    useJUnitPlatform()
-}
+    apply(plugin = "org.jetbrains.kotlin.jvm")
+    apply(plugin = "org.jetbrains.kotlin.kapt")
 
-val fatJar = task("fatJar", type = Jar::class) {
-    archiveBaseName.set("${project.name}-Release")
-    archiveVersion.set("")
-    exclude("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA")
-    from(
-        configurations.runtimeClasspath.get()
-            .map { if (it.isDirectory) it else zipTree(it) })
-    with(tasks.jar.get() as CopySpec)
-}
+    repositories {
+        jcenter()
+        maven("https://oss.sonatype.org/content/repositories/snapshots/")
+        maven("https://hub.spigotmc.org/nexus/content/repositories/public/")
+    }
 
-task("exportJar", type = Copy::class) {
-    val props = Properties()
-    file("priv.properties").inputStream().use { props.load(it) }
+    dependencies {
+        implementation(kotlin("stdlib"))
 
-    from(fatJar.archiveFile)
-    into(props.getProperty("export_folder"))
-    dependsOn(fatJar)
+        testImplementation(mct.Dependencies.hamkrest)
+        testImplementation(kotlin("test-junit5"))
+        testImplementation(mct.Dependencies.junit("api"))
+        testImplementation(mct.Dependencies.junit("params"))
+        testRuntimeOnly(mct.Dependencies.junit("engine"))
+    }
+
+    tasks.test {
+        useJUnitPlatform()
+    }
+
+    tasks.withType<KotlinCompile> {
+        kotlinOptions {
+            jvmTarget = mct.Gradle.jvmTarget
+            freeCompilerArgs = mct.Gradle.compilerArgs
+        }
+    }
+
 }

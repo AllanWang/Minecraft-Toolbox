@@ -10,6 +10,9 @@ object Versions {
     // https://hub.spigotmc.org/nexus/content/repositories/public/org/bukkit/bukkit/maven-metadata.xml
     const val bukkit = "1.15.2-R0.1-SNAPSHOT"
 
+    // https://github.com/Shynixn/MCCoroutine/releases/
+    const val mccoroutine = "1.1.0"
+
     // https://github.com/ajalt/clikt/releases
     const val clikt = "3.1.0"
 
