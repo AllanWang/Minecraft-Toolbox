@@ -2,15 +2,23 @@ package ca.allanwang.minecraft.toolbox
 
 import ca.allanwang.minecraft.toolbox.base.CommandContext
 import ca.allanwang.minecraft.toolbox.base.MctNode
+import ca.allanwang.minecraft.toolbox.base.MctPlayerInteractionHandler
 import ca.allanwang.minecraft.toolbox.base.MctPlayerMoveHandler
 import ca.allanwang.minecraft.toolbox.base.PluginScope
+import ca.allanwang.minecraft.toolbox.base.isBelow
+import ca.allanwang.minecraft.toolbox.base.isRightClick
 import ca.allanwang.minecraft.toolbox.base.metadata
+import ca.allanwang.minecraft.toolbox.base.toPrettyString
 import dagger.Module
 import dagger.Provides
 import dagger.multibindings.IntoSet
+import org.bukkit.Material
 import org.bukkit.Server
 import org.bukkit.entity.Player
+import org.bukkit.event.Event
+import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
+import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.plugin.Plugin
 import java.util.*
 import java.util.logging.Logger
@@ -21,7 +29,7 @@ class CompassHelper @Inject internal constructor(
     private val plugin: Plugin,
     private val server: Server,
     private val logger: Logger
-) : MctPlayerMoveHandler {
+) : MctPlayerMoveHandler, MctPlayerInteractionHandler {
 
     companion object {
         /**
@@ -33,13 +41,6 @@ class CompassHelper @Inject internal constructor(
          * Key for player to track
          */
         private const val KEY_TRACKING = "mct_compass_player_tracking"
-    }
-
-    override fun onPlayerMove(event: PlayerMoveEvent) {
-        event.player.compassTrackers.mapNotNull { server.getPlayer(it) }
-            .forEach {
-                it.compassTarget = event.player.location
-            }
     }
 
     private var Player.compassTrackers: Set<UUID>
@@ -73,6 +74,32 @@ class CompassHelper @Inject internal constructor(
     fun removeTracker(player: Player, tracker: Player) {
         player.compassTrackers =
             player.compassTrackers.filter { it != tracker.uniqueId }.toSet()
+    }
+
+    override fun onPlayerMove(event: PlayerMoveEvent) {
+        event.player.compassTrackers.mapNotNull { server.getPlayer(it) }
+            .forEach {
+                it.compassTarget = event.player.location
+            }
+    }
+
+    override fun onPlayerInteract(event: PlayerInteractEvent) {
+        if (!event.action.isRightClick) return
+        // Cancel offhand usage if compass is in main hand
+        if (event.hand == EquipmentSlot.OFF_HAND && event.player.inventory.itemInMainHand.type == Material.COMPASS) {
+            event.isCancelled = true
+            return
+        }
+        if (event.material != Material.COMPASS) return
+        event.item
+        if (event.clickedBlock?.location?.isBelow(event.player.location) == true) {
+            // Broadcast location
+            server.onlinePlayers.forEach {
+                it.sendMessage("${event.player.name} is at ${event.player.location.toPrettyString()}")
+            }
+            return
+        }
+        event.player.sendMessage(event.player.location.toPrettyString())
     }
 }
 
@@ -124,5 +151,11 @@ object CompassModule {
     @IntoSet
     @PluginScope
     fun compassHelperMove(compassHelper: CompassHelper): MctPlayerMoveHandler =
+        compassHelper
+
+    @Provides
+    @IntoSet
+    @PluginScope
+    fun compassHelperInteract(compassHelper: CompassHelper): MctPlayerInteractionHandler =
         compassHelper
 }

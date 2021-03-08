@@ -13,7 +13,7 @@ dependencies {
 }
 
 val fatJar = task("fatJar", type = Jar::class) {
-    archiveBaseName.set("${project.name}-Release")
+    archiveBaseName.set("Minecraft-Toolbox-Release")
     archiveVersion.set("")
     exclude("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA")
     from(

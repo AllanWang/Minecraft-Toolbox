@@ -1,6 +1,7 @@
 package ca.allanwang.minecraft.toolbox
 
 import ca.allanwang.minecraft.toolbox.base.MctNode
+import ca.allanwang.minecraft.toolbox.base.MctPlayerInteractionHandler
 import ca.allanwang.minecraft.toolbox.base.MctPlayerMoveHandler
 import ca.allanwang.minecraft.toolbox.base.PluginScope
 import ca.allanwang.minecraft.toolbox.base.RootNode
@@ -25,8 +26,11 @@ interface MctPluginComponent {
     fun playerMoveHandlers(): Set<MctPlayerMoveHandler>
 
     @PluginScope
+    fun playerInteractionHandlers(): Set<MctPlayerInteractionHandler>
+
+    @PluginScope
     @RootNode
-    fun rootNodes(): Map<@JvmSuppressWildcards String, MctNode>
+    fun rootNodes(): Map<String, MctNode>
 
     @Component.Builder
     interface Builder {

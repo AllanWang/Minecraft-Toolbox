@@ -3,18 +3,22 @@
 package ca.allanwang.minecraft.toolbox
 
 import ca.allanwang.minecraft.toolbox.base.CommandContext
+import ca.allanwang.minecraft.toolbox.base.MctPlayerInteractionHandler
 import ca.allanwang.minecraft.toolbox.base.MctPlayerMoveHandler
 import ca.allanwang.minecraft.toolbox.base.TabCompleteContext
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
+import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.*
 
-class ToolboxPlugin : JavaPlugin(), MctPlayerMoveHandler, Listener {
+class ToolboxPlugin : JavaPlugin(), MctPlayerMoveHandler,
+    MctPlayerInteractionHandler, Listener {
 
     private var _component: MctPluginComponent? = null
     private val component: MctPluginComponent get() = _component!!
@@ -79,8 +83,14 @@ class ToolboxPlugin : JavaPlugin(), MctPlayerMoveHandler, Listener {
         return result
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGH)
     override fun onPlayerMove(event: PlayerMoveEvent) {
         component.playerMoveHandlers().forEach { it.onPlayerMove(event) }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    override fun onPlayerInteract(event: PlayerInteractEvent) {
+        component.playerInteractionHandlers()
+            .forEach { it.onPlayerInteract(event) }
     }
 }
