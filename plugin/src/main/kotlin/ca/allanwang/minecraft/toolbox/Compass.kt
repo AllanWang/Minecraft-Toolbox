@@ -2,22 +2,19 @@ package ca.allanwang.minecraft.toolbox
 
 import ca.allanwang.minecraft.toolbox.base.CommandContext
 import ca.allanwang.minecraft.toolbox.base.MctNode
+import ca.allanwang.minecraft.toolbox.base.MctPlayerMoveHandler
 import ca.allanwang.minecraft.toolbox.base.PluginScope
-import com.github.ajalt.clikt.parameters.arguments.argument
-import com.github.ajalt.clikt.parameters.arguments.convert
+import ca.allanwang.minecraft.toolbox.base.metadata
 import dagger.Module
 import dagger.Provides
 import dagger.multibindings.IntoSet
 import org.bukkit.Server
-import org.bukkit.command.CommandExecutor
 import org.bukkit.entity.Player
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.plugin.Plugin
-import org.bukkit.plugin.java.JavaPlugin
 import java.util.*
 import java.util.logging.Logger
 import javax.inject.Inject
-import kotlin.math.log
 
 @PluginScope
 class CompassHelper @Inject internal constructor(
@@ -39,9 +36,10 @@ class CompassHelper @Inject internal constructor(
     }
 
     override fun onPlayerMove(event: PlayerMoveEvent) {
-        event.player.compassTrackers.mapNotNull { server.getPlayer(it) }.forEach {
-            it.compassTarget = event.player.location
-        }
+        event.player.compassTrackers.mapNotNull { server.getPlayer(it) }
+            .forEach {
+                it.compassTarget = event.player.location
+            }
     }
 
     private var Player.compassTrackers: Set<UUID>
@@ -86,7 +84,7 @@ class Compass @Inject internal constructor(
 ) : MctNode(name = "compass") {
 
     init {
-       children(follow, reset)
+        children(follow, reset)
     }
 
     @PluginScope

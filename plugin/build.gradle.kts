@@ -4,7 +4,6 @@ dependencies {
     implementation(project(":base"))
     implementation(kotlin("reflect"))
     compileOnly(mct.Dependencies.bukkit)
-    implementation(mct.Dependencies.clikt)
     implementation(mct.Dependencies.mccoroutine)
     implementation(mct.Dependencies.mccoroutine("core"))
     implementation(mct.Dependencies.dagger)

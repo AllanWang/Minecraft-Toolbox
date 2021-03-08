@@ -1,6 +1,7 @@
 package ca.allanwang.minecraft.toolbox
 
 import ca.allanwang.minecraft.toolbox.base.MctNode
+import ca.allanwang.minecraft.toolbox.base.MctPlayerMoveHandler
 import ca.allanwang.minecraft.toolbox.base.PluginScope
 import ca.allanwang.minecraft.toolbox.base.RootNode
 import dagger.BindsInstance

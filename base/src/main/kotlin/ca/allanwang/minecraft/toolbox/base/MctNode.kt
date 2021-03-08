@@ -24,7 +24,7 @@ abstract class MctNode(val name: String) {
 
     var help: String? = null
 
-    private val _children: MutableMap<String, MctNode> = mutableMapOf()
+    private val _children: MutableMap<String, MctNode> = sortedMapOf()
 
     val children: Map<String, MctNode> get() = _children
 
@@ -33,7 +33,7 @@ abstract class MctNode(val name: String) {
     }
 
     fun handleCommand(context: CommandContext): Boolean {
-        val key = context.args.firstOrNull()?.toLowerCase(Locale.ENGLISH)
+        val key = context.args.firstOrNull()?.toLowerCase(Locale.ENGLISH) ?: return false
         val child = _children[key]
         if (child != null) {
             return child.handleCommand(context.child())
@@ -46,7 +46,7 @@ abstract class MctNode(val name: String) {
     }
 
     fun handleTabComplete(context: TabCompleteContext): List<String>? {
-        val key = context.args.firstOrNull()?.toLowerCase(Locale.ENGLISH)
+        val key = context.args.firstOrNull()?.toLowerCase(Locale.ENGLISH) ?: return null
         val child = _children[key]
         if (child != null) {
             return child.handleTabComplete(context.child())
@@ -56,6 +56,16 @@ abstract class MctNode(val name: String) {
 
     protected open suspend fun CommandContext.command() = Unit
 
-    protected open fun TabCompleteContext.tabComplete(): List<String>? = null
+    protected open fun TabCompleteContext.tabComplete(): List<String>? {
+        val prefix = args.firstOrNull()
+        val candidates =
+            _children.keys.takeIf { it.isNotEmpty() }?.toList() ?: return null
+        return if (prefix.isNullOrEmpty()) candidates else candidates.filter {
+            it.startsWith(
+                prefix,
+                ignoreCase = true
+            )
+        }
+    }
 
 }

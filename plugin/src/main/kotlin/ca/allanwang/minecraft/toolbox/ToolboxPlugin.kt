@@ -3,8 +3,8 @@
 package ca.allanwang.minecraft.toolbox
 
 import ca.allanwang.minecraft.toolbox.base.CommandContext
+import ca.allanwang.minecraft.toolbox.base.MctPlayerMoveHandler
 import ca.allanwang.minecraft.toolbox.base.TabCompleteContext
-import com.github.shynixn.mccoroutine.setSuspendingExecutor
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
@@ -25,7 +25,6 @@ class ToolboxPlugin : JavaPlugin(), MctPlayerMoveHandler, Listener {
                 .build()
         logger.info("Hello world")
         server.pluginManager.registerEvents(this, this)
-        getCommand("mct compass")?.setSuspendingExecutor(Compass2())
         server.helpMap.helpTopics
     }
 
@@ -75,7 +74,9 @@ class ToolboxPlugin : JavaPlugin(), MctPlayerMoveHandler, Listener {
             depth = 0,
             plugin = this
         )
-        return mctNode.handleTabComplete(context)
+        val result = mctNode.handleTabComplete(context)
+        logger.info { "tab ${command.name} ${args.contentToString()} -> $result" }
+        return result
     }
 
     @EventHandler
