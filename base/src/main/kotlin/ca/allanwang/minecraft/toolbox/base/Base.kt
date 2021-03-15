@@ -1,7 +1,6 @@
 package ca.allanwang.minecraft.toolbox.base
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.SharedFlow
@@ -69,9 +68,9 @@ fun Location.toPrettyString() = buildString {
 }
 
 /**
- * Check if location is just below [loc].
+ * Check if location is below [loc].
  * Decimals are ignored, and note that y represents elevation axis.
  */
 fun Location.isBelow(loc: Location): Boolean {
-    return blockX == loc.blockX && blockY == loc.blockY - 1 && blockZ == loc.blockZ
+    return blockX == loc.blockX && blockY < loc.blockY && blockZ == loc.blockZ
 }
