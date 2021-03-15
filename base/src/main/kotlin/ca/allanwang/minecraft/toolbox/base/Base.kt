@@ -10,6 +10,9 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.bukkit.Location
+import org.bukkit.Material
+import org.bukkit.block.Block
+import org.bukkit.block.BlockFace
 import org.bukkit.event.Event
 import org.bukkit.event.block.Action
 import org.bukkit.metadata.FixedMetadataValue
@@ -74,3 +77,22 @@ fun Location.toPrettyString() = buildString {
 fun Location.isBelow(loc: Location): Boolean {
     return blockX == loc.blockX && blockY < loc.blockY && blockZ == loc.blockZ
 }
+
+val Block.isHighestBlock: Boolean
+    get() = world.getHighestBlockYAt(location) <= y
+
+fun Block.isNear(material: Material, range: Int): Boolean {
+    (-range..range).forEach { x ->
+        (-range..range).forEach { y ->
+            (-range..range).forEach { z ->
+                if (getRelative(x, y, z).type == material) return true
+            }
+        }
+    }
+    return false
+}
+
+fun Block.faceSequence(face: BlockFace): Sequence<Block> =
+    generateSequence(this) {
+        it.getRelative(face)
+    }

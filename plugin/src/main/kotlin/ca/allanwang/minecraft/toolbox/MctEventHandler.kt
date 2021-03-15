@@ -7,6 +7,9 @@ import org.bukkit.event.Event
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
+import org.bukkit.event.block.BlockExpEvent
+import org.bukkit.event.entity.EntityChangeBlockEvent
+import org.bukkit.event.entity.EntitySpawnEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
 
@@ -28,6 +31,21 @@ class MctEventHandler(
 
     @EventHandler(priority = EventPriority.HIGH)
     fun onPlayerInteract(event: PlayerInteractEvent) {
+        emit(event)
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    fun onBlockExpEvent(event: BlockExpEvent) {
+        emit(event)
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    fun onEntitySpawnEvent(event: EntitySpawnEvent) {
+        emit(event)
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    fun onEntityChangeBlockEvent(event: EntityChangeBlockEvent) {
         emit(event)
     }
 }
