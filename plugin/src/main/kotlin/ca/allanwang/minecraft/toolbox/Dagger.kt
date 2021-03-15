@@ -1,8 +1,7 @@
 package ca.allanwang.minecraft.toolbox
 
+import ca.allanwang.minecraft.toolbox.base.Mct
 import ca.allanwang.minecraft.toolbox.base.MctNode
-import ca.allanwang.minecraft.toolbox.base.MctPlayerInteractionHandler
-import ca.allanwang.minecraft.toolbox.base.MctPlayerMoveHandler
 import ca.allanwang.minecraft.toolbox.base.PluginScope
 import ca.allanwang.minecraft.toolbox.base.RootNode
 import dagger.BindsInstance
@@ -23,19 +22,19 @@ interface MctPluginComponent {
     fun logger(): Logger
 
     @PluginScope
-    fun playerMoveHandlers(): Set<MctPlayerMoveHandler>
-
-    @PluginScope
-    fun playerInteractionHandlers(): Set<MctPlayerInteractionHandler>
-
-    @PluginScope
     @RootNode
     fun rootNodes(): Map<String, MctNode>
+
+    @PluginScope
+    fun mct(): Mct
 
     @Component.Builder
     interface Builder {
         @BindsInstance
         fun plugin(plugin: Plugin): Builder
+
+        @BindsInstance
+        fun mct(mct: Mct): Builder
 
         fun build(): MctPluginComponent
     }
@@ -55,7 +54,7 @@ object MctPluginModule {
     @IntoSet
     @RootNode
     @PluginScope
-    fun mct(mct: Mct): MctNode = mct
+    fun mctNode(mct: MctRootNode): MctNode = mct
 
     @Provides
     @RootNode

@@ -11,10 +11,7 @@ object Versions {
     const val bukkit = "1.15.2-R0.1-SNAPSHOT"
 
     // https://github.com/Shynixn/MCCoroutine/releases/
-    const val mccoroutine = "1.1.0"
-
-    // https://github.com/ajalt/clikt/releases
-    const val clikt = "3.1.0"
+    const val mccoroutine = "1.2.0"
 
     // https://github.com/google/dagger/releases/tag/dagger-2.28.3
     const val dagger = "2.28.3"

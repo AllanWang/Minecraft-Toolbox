@@ -4,8 +4,6 @@ object Dependencies {
 
     val bukkit = "org.bukkit:bukkit:${Versions.bukkit}"
 
-    val clikt = "com.github.ajalt.clikt:clikt:${Versions.clikt}"
-
     fun mccoroutine(type: String): String =
         "com.github.shynixn.mccoroutine:mccoroutine-bukkit-${type}:${Versions.mccoroutine}"
 

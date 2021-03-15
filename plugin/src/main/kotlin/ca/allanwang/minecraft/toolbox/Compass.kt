@@ -1,21 +1,18 @@
 package ca.allanwang.minecraft.toolbox
 
 import ca.allanwang.minecraft.toolbox.base.CommandContext
+import ca.allanwang.minecraft.toolbox.base.Mct
 import ca.allanwang.minecraft.toolbox.base.MctNode
-import ca.allanwang.minecraft.toolbox.base.MctPlayerInteractionHandler
-import ca.allanwang.minecraft.toolbox.base.MctPlayerMoveHandler
 import ca.allanwang.minecraft.toolbox.base.PluginScope
 import ca.allanwang.minecraft.toolbox.base.isBelow
 import ca.allanwang.minecraft.toolbox.base.isRightClick
 import ca.allanwang.minecraft.toolbox.base.metadata
+import ca.allanwang.minecraft.toolbox.base.on
 import ca.allanwang.minecraft.toolbox.base.toPrettyString
 import dagger.Module
-import dagger.Provides
-import dagger.multibindings.IntoSet
 import org.bukkit.Material
 import org.bukkit.Server
 import org.bukkit.entity.Player
-import org.bukkit.event.Event
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.inventory.EquipmentSlot
@@ -28,8 +25,9 @@ import javax.inject.Inject
 class CompassHelper @Inject internal constructor(
     private val plugin: Plugin,
     private val server: Server,
-    private val logger: Logger
-) : MctPlayerMoveHandler, MctPlayerInteractionHandler {
+    private val logger: Logger,
+    private val mct: Mct,
+) {
 
     companion object {
         /**
@@ -55,6 +53,11 @@ class CompassHelper @Inject internal constructor(
             metadata(KEY_TRACKING, plugin, value)
         }
 
+    init {
+        mct.on<PlayerInteractEvent> { onPlayerInteract(it) }
+        mct.on<PlayerMoveEvent> { onPlayerMove(it) }
+    }
+
     private fun removeTracking(player: Player) {
         val trackingPlayer = player.compassTracking?.let {
             server.getPlayer(it)
@@ -76,14 +79,14 @@ class CompassHelper @Inject internal constructor(
             player.compassTrackers.filter { it != tracker.uniqueId }.toSet()
     }
 
-    override fun onPlayerMove(event: PlayerMoveEvent) {
+    private fun onPlayerMove(event: PlayerMoveEvent) {
         event.player.compassTrackers.mapNotNull { server.getPlayer(it) }
             .forEach {
                 it.compassTarget = event.player.location
             }
     }
 
-    override fun onPlayerInteract(event: PlayerInteractEvent) {
+    private fun onPlayerInteract(event: PlayerInteractEvent) {
         if (!event.action.isRightClick) return
         // Cancel offhand usage if compass is in main hand
         if (event.hand == EquipmentSlot.OFF_HAND && event.player.inventory.itemInMainHand.type == Material.COMPASS) {
@@ -146,16 +149,4 @@ class Compass @Inject internal constructor(
 }
 
 @Module
-object CompassModule {
-    @Provides
-    @IntoSet
-    @PluginScope
-    fun compassHelperMove(compassHelper: CompassHelper): MctPlayerMoveHandler =
-        compassHelper
-
-    @Provides
-    @IntoSet
-    @PluginScope
-    fun compassHelperInteract(compassHelper: CompassHelper): MctPlayerInteractionHandler =
-        compassHelper
-}
+object CompassModule

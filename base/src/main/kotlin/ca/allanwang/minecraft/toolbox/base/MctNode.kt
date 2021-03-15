@@ -33,7 +33,8 @@ abstract class MctNode(val name: String) {
     }
 
     fun handleCommand(context: CommandContext): Boolean {
-        val key = context.args.firstOrNull()?.toLowerCase(Locale.ENGLISH) ?: return false
+        val key = context.args.firstOrNull()?.toLowerCase(Locale.ENGLISH)
+            ?: return false
         val child = _children[key]
         if (child != null) {
             return child.handleCommand(context.child())
@@ -46,7 +47,8 @@ abstract class MctNode(val name: String) {
     }
 
     fun handleTabComplete(context: TabCompleteContext): List<String>? {
-        val key = context.args.firstOrNull()?.toLowerCase(Locale.ENGLISH) ?: return null
+        val key = context.args.firstOrNull()?.toLowerCase(Locale.ENGLISH)
+            ?: return null
         val child = _children[key]
         if (child != null) {
             return child.handleTabComplete(context.child())

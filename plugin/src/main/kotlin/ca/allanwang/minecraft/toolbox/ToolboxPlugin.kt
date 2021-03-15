@@ -2,38 +2,56 @@
 
 package ca.allanwang.minecraft.toolbox
 
+import ca.allanwang.minecraft.toolbox.base.BukkitCoroutineDispatcher
 import ca.allanwang.minecraft.toolbox.base.CommandContext
-import ca.allanwang.minecraft.toolbox.base.MctPlayerInteractionHandler
-import ca.allanwang.minecraft.toolbox.base.MctPlayerMoveHandler
+import ca.allanwang.minecraft.toolbox.base.Mct
 import ca.allanwang.minecraft.toolbox.base.TabCompleteContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import org.bukkit.Bukkit
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
-import org.bukkit.event.EventHandler
-import org.bukkit.event.EventPriority
-import org.bukkit.event.Listener
-import org.bukkit.event.player.PlayerInteractEvent
-import org.bukkit.event.player.PlayerMoveEvent
+import org.bukkit.event.Event
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.*
+import java.util.logging.Logger
 
-class ToolboxPlugin : JavaPlugin(), MctPlayerMoveHandler,
-    MctPlayerInteractionHandler, Listener {
+class ToolboxPlugin : JavaPlugin() {
 
     private var _component: MctPluginComponent? = null
     private val component: MctPluginComponent get() = _component!!
 
     override fun onEnable() {
+        val mct = object : Mct {
+            override val mctLogger: Logger = logger
+
+            override val mctScope: CoroutineScope = CoroutineScope(
+                BukkitCoroutineDispatcher(this@ToolboxPlugin)
+            )
+
+            val eventFlow: MutableSharedFlow<Event> =
+                MutableSharedFlow(extraBufferCapacity = Int.MAX_VALUE)
+
+            override val events: SharedFlow<Event> get() = eventFlow
+        }
         _component =
-            DaggerMctPluginComponent.builder().plugin(this)
+            DaggerMctPluginComponent.builder().plugin(this).mct(mct)
                 .build()
+        val mctEventHandler =
+            MctEventHandler(mct = mct, eventFlow = mct.eventFlow)
+        component.rootNodes() // Init everything
         logger.info("Hello world")
-        server.pluginManager.registerEvents(this, this)
+        server.pluginManager.registerEvents(mctEventHandler, this)
         server.helpMap.helpTopics
     }
 
     override fun onDisable() {
         logger.info("Goodbye world")
+        component.mct().mctScope.cancel()
+        Bukkit.getServer().scheduler.cancelTasks(this)
         _component = null
     }
 
@@ -81,16 +99,5 @@ class ToolboxPlugin : JavaPlugin(), MctPlayerMoveHandler,
         val result = mctNode.handleTabComplete(context)
         logger.info { "tab ${command.name} ${args.contentToString()} -> $result" }
         return result
-    }
-
-    @EventHandler(priority = EventPriority.HIGH)
-    override fun onPlayerMove(event: PlayerMoveEvent) {
-        component.playerMoveHandlers().forEach { it.onPlayerMove(event) }
-    }
-
-    @EventHandler(priority = EventPriority.HIGH)
-    override fun onPlayerInteract(event: PlayerInteractEvent) {
-        component.playerInteractionHandlers()
-            .forEach { it.onPlayerInteract(event) }
     }
 }

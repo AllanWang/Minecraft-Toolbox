@@ -5,7 +5,7 @@ import ca.allanwang.minecraft.toolbox.base.PluginScope
 import javax.inject.Inject
 
 @PluginScope
-class Mct @Inject internal constructor(
+class MctRootNode @Inject internal constructor(
     compass: Compass
 ) : MctNode(name = "mct") {
 
