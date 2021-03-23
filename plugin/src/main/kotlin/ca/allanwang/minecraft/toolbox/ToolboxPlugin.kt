@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.launch
 import org.bukkit.Bukkit
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
@@ -17,6 +18,8 @@ import org.bukkit.entity.Player
 import org.bukkit.event.Event
 import org.bukkit.plugin.java.JavaPlugin
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.transactions.TransactionInterface
+import org.jetbrains.exposed.sql.transactions.TransactionManager
 import java.io.File
 import java.util.*
 import java.util.logging.Logger
@@ -29,21 +32,13 @@ class ToolboxPlugin : JavaPlugin() {
     override fun onEnable() {
         initConfig()
         val mctConfig = try {
-            MctConfig(config)
+            MctFileConfig(config)
         } catch (e: NullPointerException) {
             throw IllegalStateException("Missing config")
         }
-        val dbUrl = buildString {
-            append("jdbc:mysql://")
-            append(mctConfig.sqlHost)
-            append(":")
-            append(mctConfig.sqlPort)
-            append("/")
-            append(mctConfig.sqlDatabase)
-        }
         val database = Database.connect(
-            url = dbUrl,
-            driver = "com.mysql.jdbc.Driver",
+            url = mctConfig.sqlUrl,
+            driver = mctConfig.sqlDriver,
             user = mctConfig.sqlUsername,
             password = mctConfig.sqlPassword
         )
@@ -60,9 +55,13 @@ class ToolboxPlugin : JavaPlugin() {
             override val events: SharedFlow<Event> get() = eventFlow
         }
         _component =
-            DaggerMctPluginComponent.builder().plugin(this).mct(mct)
+            DaggerMctPluginComponent.builder()
+                .plugin(this)
+                .config(mctConfig)
+                .mct(mct)
                 .database(database)
                 .build()
+        component.mctDb().init()
         val mctEventHandler =
             MctEventHandler(mct = mct, eventFlow = mct.eventFlow)
         component.rootNodes() // Init everything
@@ -91,6 +90,7 @@ class ToolboxPlugin : JavaPlugin() {
         Bukkit.getServer().scheduler.cancelTasks(this)
         _component ?: return
         component.mct().mctScope.cancel()
+        TransactionManager.closeAndUnregister(component.db())
         _component = null
     }
 
@@ -113,7 +113,9 @@ class ToolboxPlugin : JavaPlugin() {
             depth = 0,
             plugin = this
         )
-        mctNode.handleCommand(context)
+        component.mct().mctScope.launch {
+            mctNode.handleCommand(context)
+        }
         return true
     }
 
@@ -136,7 +138,7 @@ class ToolboxPlugin : JavaPlugin() {
             plugin = this
         )
         val result = mctNode.handleTabComplete(context)
-        logger.info { "tab ${command.name} ${args.contentToString()} -> $result" }
+//        logger.info { "tab ${command.name} ${args.contentToString()} -> $result" }
         return result
     }
 }

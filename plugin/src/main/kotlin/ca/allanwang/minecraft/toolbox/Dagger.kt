@@ -4,6 +4,9 @@ import ca.allanwang.minecraft.toolbox.base.Mct
 import ca.allanwang.minecraft.toolbox.base.MctNode
 import ca.allanwang.minecraft.toolbox.base.PluginScope
 import ca.allanwang.minecraft.toolbox.base.RootNode
+import ca.allanwang.minecraft.toolbox.db.MctDb
+import ca.allanwang.minecraft.toolbox.db.MctDbModule
+import ca.allanwang.minecraft.toolbox.node.MctRootNode
 import dagger.BindsInstance
 import dagger.Component
 import dagger.Module
@@ -30,12 +33,18 @@ interface MctPluginComponent {
     fun mct(): Mct
 
     @PluginScope
-    fun database(): Database
+    fun db(): Database
+
+    @PluginScope
+    fun mctDb(): MctDb
 
     @Component.Builder
     interface Builder {
         @BindsInstance
         fun plugin(plugin: Plugin): Builder
+
+        @BindsInstance
+        fun config(config: MctConfig): Builder
 
         @BindsInstance
         fun database(database: Database): Builder
@@ -48,7 +57,7 @@ interface MctPluginComponent {
 }
 
 @Module(
-    includes = [CompassModule::class],
+    includes = [MctDbModule::class],
 )
 object MctPluginModule {
     @Provides

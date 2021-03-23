@@ -1,4 +1,4 @@
-import java.util.Properties
+import java.util.*
 
 dependencies {
     implementation(project(":base"))
@@ -8,10 +8,15 @@ dependencies {
     implementation(mct.Dependencies.exposed("core"))
     implementation(mct.Dependencies.exposed("dao"))
     implementation(mct.Dependencies.exposed("jdbc"))
-//    implementation(mct.Dependencies.mysql)
-    implementation(mct.Dependencies.dagger)
+    implementation(mct.Dependencies.mysql)
+    api(mct.Dependencies.dagger)
     kapt(mct.Dependencies.daggerKapt)
 
+    testImplementation(kotlin("reflect"))
+    testImplementation(mct.Dependencies.h2)
+    testImplementation(mct.Dependencies.guava)
+    testImplementation(mct.Dependencies.dagger)
+    kaptTest(mct.Dependencies.daggerKapt)
     testCompileOnly(mct.Dependencies.bukkit)
 }
 
@@ -33,3 +38,5 @@ task("exportJar", type = Copy::class) {
     into(props.getProperty("export_folder"))
     dependsOn(fatJar)
 }
+
+

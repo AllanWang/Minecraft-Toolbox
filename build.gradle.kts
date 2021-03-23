@@ -21,6 +21,7 @@ subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "org.jetbrains.kotlin.kapt")
 
+
     repositories {
         jcenter()
         maven("https://oss.sonatype.org/content/repositories/snapshots/")

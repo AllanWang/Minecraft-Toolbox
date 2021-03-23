@@ -2,6 +2,7 @@
 
 # MySQL DB configs
 
+sql-logging: false
 sql-prefix: mct_
 sql-host:
 sql-port:
