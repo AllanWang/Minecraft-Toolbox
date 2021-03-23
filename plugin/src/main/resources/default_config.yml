@@ -1,0 +1,10 @@
+### Minecraft Toolbox
+
+# MySQL DB configs
+
+sql-prefix: mct_
+sql-host:
+sql-port:
+sql-database:
+sql-username:
+sql-password:

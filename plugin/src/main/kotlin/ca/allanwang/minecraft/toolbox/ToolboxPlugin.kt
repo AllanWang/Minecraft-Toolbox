@@ -16,6 +16,8 @@ import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.event.Event
 import org.bukkit.plugin.java.JavaPlugin
+import org.jetbrains.exposed.sql.Database
+import java.io.File
 import java.util.*
 import java.util.logging.Logger
 
@@ -25,6 +27,26 @@ class ToolboxPlugin : JavaPlugin() {
     private val component: MctPluginComponent get() = _component!!
 
     override fun onEnable() {
+        initConfig()
+        val mctConfig = try {
+            MctConfig(config)
+        } catch (e: NullPointerException) {
+            throw IllegalStateException("Missing config")
+        }
+        val dbUrl = buildString {
+            append("jdbc:mysql://")
+            append(mctConfig.sqlHost)
+            append(":")
+            append(mctConfig.sqlPort)
+            append("/")
+            append(mctConfig.sqlDatabase)
+        }
+        val database = Database.connect(
+            url = dbUrl,
+            driver = "com.mysql.jdbc.Driver",
+            user = mctConfig.sqlUsername,
+            password = mctConfig.sqlPassword
+        )
         val mct = object : Mct {
             override val mctLogger: Logger = logger
 
@@ -39,6 +61,7 @@ class ToolboxPlugin : JavaPlugin() {
         }
         _component =
             DaggerMctPluginComponent.builder().plugin(this).mct(mct)
+                .database(database)
                 .build()
         val mctEventHandler =
             MctEventHandler(mct = mct, eventFlow = mct.eventFlow)
@@ -48,10 +71,26 @@ class ToolboxPlugin : JavaPlugin() {
         server.helpMap.helpTopics
     }
 
+    private fun initConfig() {
+        val configFile = File(dataFolder, "config.yml")
+        if (!configFile.isFile) {
+            val defaultConfigStream =
+                ToolboxPlugin::class.java.classLoader.getResourceAsStream("default_config.yml")
+                    ?: throw IllegalStateException("Missing default configs")
+            configFile.parentFile?.mkdirs()
+            defaultConfigStream.use { input ->
+                configFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+        }
+    }
+
     override fun onDisable() {
         logger.info("Goodbye world")
-        component.mct().mctScope.cancel()
         Bukkit.getServer().scheduler.cancelTasks(this)
+        _component ?: return
+        component.mct().mctScope.cancel()
         _component = null
     }
 

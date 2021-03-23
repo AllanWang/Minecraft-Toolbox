@@ -5,6 +5,10 @@ dependencies {
     implementation(kotlin("reflect"))
     compileOnly(mct.Dependencies.bukkit)
     implementation(mct.Dependencies.coroutines)
+    implementation(mct.Dependencies.exposed("core"))
+    implementation(mct.Dependencies.exposed("dao"))
+    implementation(mct.Dependencies.exposed("jdbc"))
+//    implementation(mct.Dependencies.mysql)
     implementation(mct.Dependencies.dagger)
     kapt(mct.Dependencies.daggerKapt)
 

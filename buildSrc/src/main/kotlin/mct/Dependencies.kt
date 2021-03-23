@@ -18,6 +18,11 @@ object Dependencies {
     fun coroutines(type: String) =
         "org.jetbrains.kotlinx:kotlinx-coroutines-${type}:${Versions.coroutines}"
 
+    fun exposed(type: String) =
+        "org.jetbrains.exposed:exposed-${type}:${Versions.exposed}"
+
+    val mysql = "mysql:mysql-connector-java:${Versions.mysql}"
+
     fun junit(type: String) =
         "org.junit.jupiter:junit-jupiter-${type}:${Versions.junit}"
 

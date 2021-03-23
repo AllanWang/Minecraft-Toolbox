@@ -11,6 +11,7 @@ import dagger.Provides
 import dagger.multibindings.IntoSet
 import org.bukkit.Server
 import org.bukkit.plugin.Plugin
+import org.jetbrains.exposed.sql.Database
 import java.util.*
 import java.util.logging.Logger
 
@@ -28,10 +29,16 @@ interface MctPluginComponent {
     @PluginScope
     fun mct(): Mct
 
+    @PluginScope
+    fun database(): Database
+
     @Component.Builder
     interface Builder {
         @BindsInstance
         fun plugin(plugin: Plugin): Builder
+
+        @BindsInstance
+        fun database(database: Database): Builder
 
         @BindsInstance
         fun mct(mct: Mct): Builder
