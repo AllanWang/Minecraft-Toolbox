@@ -9,6 +9,9 @@ import ca.allanwang.minecraft.toolbox.base.isRightClick
 import ca.allanwang.minecraft.toolbox.base.metadata
 import ca.allanwang.minecraft.toolbox.base.on
 import ca.allanwang.minecraft.toolbox.base.toPrettyString
+import ca.allanwang.minecraft.toolbox.sqldelight.MctDb
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.bukkit.Material
 import org.bukkit.Server
 import org.bukkit.block.Block
@@ -31,6 +34,7 @@ class CompassHelper @Inject internal constructor(
     private val server: Server,
     private val logger: Logger,
     private val mct: Mct,
+    private val mctDb: MctDb,
 ) {
 
     companion object {
@@ -113,7 +117,10 @@ class CompassHelper @Inject internal constructor(
         val player = event.player
         val clickedBlocked = event.clickedBlock ?: return
         if (event.player.isSneaking) {
-            if (isBeacon(clickedBlocked)) return deleteBeacon(player, clickedBlocked)
+            if (isBeacon(clickedBlocked)) return deleteBeacon(
+                player,
+                clickedBlocked
+            )
             if (showBeacon(player, clickedBlocked)) return
         }
         if (event.clickedBlock?.location?.isBelow(event.player.location) == true) {
@@ -136,6 +143,16 @@ class CompassHelper @Inject internal constructor(
                 BEACON_HEIGHT
             ).isBeaconBlock == true
         ) return false
+        mct.mctScope.launch(Dispatchers.IO) {
+            mctDb.transaction {
+                mctDb.mctDbQueries.insert(
+                    player.uniqueId.toString(),
+                    block.x,
+                    block.y,
+                    block.z
+                )
+            }
+        }
         // Create beacon
         logger.info { "Create beacon ${block.location.toPrettyString()}" }
         player.sendMessage("Created beacon at ${block.location.toPrettyString()}")

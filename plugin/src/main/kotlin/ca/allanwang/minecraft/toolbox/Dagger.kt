@@ -4,9 +4,9 @@ import ca.allanwang.minecraft.toolbox.base.Mct
 import ca.allanwang.minecraft.toolbox.base.MctNode
 import ca.allanwang.minecraft.toolbox.base.PluginScope
 import ca.allanwang.minecraft.toolbox.base.RootNode
-import ca.allanwang.minecraft.toolbox.db.MctDb
 import ca.allanwang.minecraft.toolbox.db.MctDbModule
 import ca.allanwang.minecraft.toolbox.node.MctRootNode
+import com.squareup.sqldelight.sqlite.driver.JdbcDriver
 import dagger.BindsInstance
 import dagger.Component
 import dagger.Module
@@ -14,9 +14,9 @@ import dagger.Provides
 import dagger.multibindings.IntoSet
 import org.bukkit.Server
 import org.bukkit.plugin.Plugin
-import org.jetbrains.exposed.sql.Database
 import java.util.*
 import java.util.logging.Logger
+import javax.sql.DataSource
 
 @Component(modules = [MctPluginModule::class])
 @PluginScope
@@ -33,10 +33,10 @@ interface MctPluginComponent {
     fun mct(): Mct
 
     @PluginScope
-    fun db(): Database
+    fun dataSource(): DataSource
 
     @PluginScope
-    fun mctDb(): MctDb
+    fun jdbcDriver(): JdbcDriver
 
     @Component.Builder
     interface Builder {
@@ -47,7 +47,7 @@ interface MctPluginComponent {
         fun config(config: MctConfig): Builder
 
         @BindsInstance
-        fun database(database: Database): Builder
+        fun dataSource(dataSource: DataSource): Builder
 
         @BindsInstance
         fun mct(mct: Mct): Builder
