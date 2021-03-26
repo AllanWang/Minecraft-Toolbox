@@ -1,4 +1,4 @@
-package ca.allanwang.minecraft.toolbox
+package ca.allanwang.minecraft.toolbox.node
 
 import ca.allanwang.minecraft.toolbox.base.MctNode
 import ca.allanwang.minecraft.toolbox.base.PluginScope
@@ -6,11 +6,12 @@ import javax.inject.Inject
 
 @PluginScope
 class MctRootNode @Inject internal constructor(
-    compass: Compass
+    compass: Compass,
+    beacon: Beacon,
 ) : MctNode(name = "mct") {
 
     init {
-        children(compass)
+        children(compass, beacon)
     }
 
 }

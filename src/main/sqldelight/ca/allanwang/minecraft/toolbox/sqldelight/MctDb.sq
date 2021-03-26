@@ -1,0 +1,14 @@
+CREATE TABLE IF NOT EXISTS mct_beacon (
+    id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    user CHAR(36) CHARACTER SET ascii NOT NULL,
+    x INT NOT NULL,
+    y INT NOT NULL,
+    z INT NOT NULL
+);
+
+selectAll:
+SELECT * FROM mct_beacon ORDER BY x ASC, y ASC, z ASC;
+
+insert:
+INSERT INTO mct_beacon(user, x, y, z)
+VALUES(?,?,?,?);

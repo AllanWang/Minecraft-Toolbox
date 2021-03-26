@@ -1,5 +1,16 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.*
+import com.squareup.sqldelight.gradle.SqlDelightExtension
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath(mct.Plugins.sqldelight)
+    }
+}
 
 plugins {
     kotlin("jvm") version mct.Versions.kotlin
@@ -8,6 +19,16 @@ plugins {
 
 repositories {
     jcenter()
+}
+
+apply(plugin = "com.squareup.sqldelight")
+
+extensions.configure<SqlDelightExtension>("sqldelight") {
+    database("MctDb") {
+        packageName = "ca.allanwang.minecraft.toolbox.sqldelight"
+        dialect = "mysql"
+        migrationOutputDirectory = file("$buildDir/resources/main/migrations")
+    }
 }
 
 subprojects {
@@ -20,6 +41,7 @@ subprojects {
 
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "org.jetbrains.kotlin.kapt")
+//    apply(plugin = "com.squareup.sqldelight")
 
     repositories {
         jcenter()

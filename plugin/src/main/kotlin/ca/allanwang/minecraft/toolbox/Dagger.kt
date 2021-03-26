@@ -4,6 +4,9 @@ import ca.allanwang.minecraft.toolbox.base.Mct
 import ca.allanwang.minecraft.toolbox.base.MctNode
 import ca.allanwang.minecraft.toolbox.base.PluginScope
 import ca.allanwang.minecraft.toolbox.base.RootNode
+import ca.allanwang.minecraft.toolbox.db.MctDbModule
+import ca.allanwang.minecraft.toolbox.node.MctRootNode
+import com.squareup.sqldelight.sqlite.driver.JdbcDriver
 import dagger.BindsInstance
 import dagger.Component
 import dagger.Module
@@ -13,6 +16,7 @@ import org.bukkit.Server
 import org.bukkit.plugin.Plugin
 import java.util.*
 import java.util.logging.Logger
+import javax.sql.DataSource
 
 @Component(modules = [MctPluginModule::class])
 @PluginScope
@@ -28,10 +32,22 @@ interface MctPluginComponent {
     @PluginScope
     fun mct(): Mct
 
+    @PluginScope
+    fun dataSource(): DataSource
+
+    @PluginScope
+    fun jdbcDriver(): JdbcDriver
+
     @Component.Builder
     interface Builder {
         @BindsInstance
         fun plugin(plugin: Plugin): Builder
+
+        @BindsInstance
+        fun config(config: MctConfig): Builder
+
+        @BindsInstance
+        fun dataSource(dataSource: DataSource): Builder
 
         @BindsInstance
         fun mct(mct: Mct): Builder
@@ -41,7 +57,7 @@ interface MctPluginComponent {
 }
 
 @Module(
-    includes = [CompassModule::class],
+    includes = [MctDbModule::class],
 )
 object MctPluginModule {
     @Provides

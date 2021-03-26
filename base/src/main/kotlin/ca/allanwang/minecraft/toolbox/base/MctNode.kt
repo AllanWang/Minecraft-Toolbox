@@ -1,6 +1,5 @@
 package ca.allanwang.minecraft.toolbox.base
 
-import com.github.shynixn.mccoroutine.launch
 import java.util.*
 import javax.inject.Qualifier
 import javax.inject.Scope
@@ -32,16 +31,17 @@ abstract class MctNode(val name: String) {
         _children.putAll(nodes.associateBy { it.name.toLowerCase(Locale.ENGLISH) })
     }
 
-    fun handleCommand(context: CommandContext): Boolean {
+    suspend fun handleCommand(context: CommandContext): Boolean {
         val key = context.args.firstOrNull()?.toLowerCase(Locale.ENGLISH)
-            ?: return false
+        if (key == null) {
+            context.command()
+            return false
+        }
         val child = _children[key]
         if (child != null) {
             return child.handleCommand(context.child())
         }
-        context.plugin.launch {
-            context.command()
-        }
+        context.command()
         // If node isn't root node, we'll consume the command
         return context.depth > 0
     }
