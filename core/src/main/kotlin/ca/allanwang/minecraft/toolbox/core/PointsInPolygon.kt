@@ -4,12 +4,12 @@ import java.awt.Point
 import kotlin.math.max
 import kotlin.math.min
 
-internal class PointsInPolygon(
+class PointsInPolygon(
     val path: List<Point>,
     val boundingBox: BoundingBox
 ) {
 
-    internal data class BoundingBox(
+    data class BoundingBox(
         var minX: Int,
         var minY: Int,
         var maxX: Int = minX,
@@ -171,28 +171,3 @@ internal class PointsInPolygon(
         return points
     }
 }
-
-internal inline fun <T, K, V> Iterable<T>.groupBySet(
-    keySelector: (T) -> K,
-    valueTransform: (T) -> V
-): Map<K, Set<V>> {
-    return groupBySetTo(LinkedHashMap(), keySelector, valueTransform)
-}
-
-/**
- * Copy of groupBy, where list is replaced by set.
- */
-internal inline fun <T, K, V, M : MutableMap<in K, MutableSet<V>>> Iterable<T>.groupBySetTo(
-    destination: M,
-    keySelector: (T) -> K,
-    valueTransform: (T) -> V
-): M {
-    for (element in this) {
-        val key = keySelector(element)
-        val set = destination.getOrPut(key) { mutableSetOf() }
-        set.add(valueTransform(element))
-    }
-    return destination
-}
-
-internal fun Point.coord(): String = "($x, $y)"
