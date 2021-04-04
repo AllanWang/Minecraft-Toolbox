@@ -34,4 +34,6 @@ object Dependencies {
         "org.junit.jupiter:junit-jupiter-${type}:${Versions.junit}"
 
     const val hamkrest = "com.natpryce:hamkrest:${Versions.hamkrest}"
+
+    const val truth = "com.google.truth:truth:${Versions.truth}"
 }

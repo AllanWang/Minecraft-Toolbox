@@ -172,7 +172,7 @@ internal class PointsInPolygon(
     }
 }
 
-private inline fun <T, K, V> Iterable<T>.groupBySet(
+internal inline fun <T, K, V> Iterable<T>.groupBySet(
     keySelector: (T) -> K,
     valueTransform: (T) -> V
 ): Map<K, Set<V>> {
@@ -182,7 +182,7 @@ private inline fun <T, K, V> Iterable<T>.groupBySet(
 /**
  * Copy of groupBy, where list is replaced by set.
  */
-private inline fun <T, K, V, M : MutableMap<in K, MutableSet<V>>> Iterable<T>.groupBySetTo(
+internal inline fun <T, K, V, M : MutableMap<in K, MutableSet<V>>> Iterable<T>.groupBySetTo(
     destination: M,
     keySelector: (T) -> K,
     valueTransform: (T) -> V
@@ -195,4 +195,4 @@ private inline fun <T, K, V, M : MutableMap<in K, MutableSet<V>>> Iterable<T>.gr
     return destination
 }
 
-private fun Point.coord(): String = "($x, $y)"
+internal fun Point.coord(): String = "($x, $y)"

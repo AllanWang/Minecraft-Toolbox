@@ -52,7 +52,7 @@ subprojects {
     dependencies {
         implementation(kotlin("stdlib"))
 
-        testImplementation(mct.Dependencies.hamkrest)
+        testImplementation(mct.Dependencies.truth)
         testImplementation(kotlin("test-junit5"))
         testImplementation(mct.Dependencies.junit("api"))
         testImplementation(mct.Dependencies.junit("params"))

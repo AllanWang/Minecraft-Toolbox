@@ -3,8 +3,7 @@ package ca.allanwang.minecraft.toolbox.db
 import ca.allanwang.minecraft.toolbox.MctConfig
 import ca.allanwang.minecraft.toolbox.base.PluginScope
 import ca.allanwang.minecraft.toolbox.sqldelight.MctDb
-import com.natpryce.hamkrest.assertion.assertThat
-import com.natpryce.hamkrest.equalTo
+import com.google.common.truth.Truth.assertThat
 import dagger.Component
 import dagger.Module
 import dagger.Provides
@@ -35,7 +34,7 @@ class MctDbTest {
     fun addBeacon() {
         mctDb.mctDbQueries.insert(UUID.randomUUID().toString(), 1, 2, 3)
         val selected = mctDb.mctDbQueries.selectAll()
-        assertThat(selected.executeAsList().size, equalTo(1))
+        assertThat(selected.executeAsList().size).isEqualTo(1)
     }
 
 }
