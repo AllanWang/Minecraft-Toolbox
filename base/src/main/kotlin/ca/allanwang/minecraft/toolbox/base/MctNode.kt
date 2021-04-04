@@ -19,9 +19,9 @@ annotation class RootNode
 @PluginScope
 abstract class MctNode(val name: String) {
 
-    var helpArgs: String? = null
+    open val helpArgs: String? = null
 
-    var help: String? = null
+    open val help: String? = null
 
     private val _children: MutableMap<String, MctNode> = sortedMapOf()
 
