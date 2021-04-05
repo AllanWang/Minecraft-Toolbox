@@ -1,7 +1,8 @@
 package ca.allanwang.minecraft.toolbox.helper
 
 import ca.allanwang.minecraft.toolbox.base.PluginScope
-import ca.allanwang.minecraft.toolbox.core.PointsInPolygon
+import ca.allanwang.minecraft.toolbox.core.PointKt
+import ca.allanwang.minecraft.toolbox.core.PolygonData
 import org.bukkit.block.Block
 import org.bukkit.block.BlockFace
 import java.awt.Point
@@ -24,7 +25,7 @@ class TerraformHelper @Inject internal constructor(
      * Updates are sent through [boundingBox], which should be centered around the initial block.
      */
     private fun Sequence<Block>.withinBounds(
-        boundingBox: PointsInPolygon.BoundingBox,
+        boundingBox: PolygonData.BoundingBox,
         maxSize: Int
     ): Sequence<Block> = sequence {
         for (element in this@withinBounds) {
@@ -76,7 +77,7 @@ class TerraformHelper @Inject internal constructor(
         maxSize: Int = 100
     ): List<Point>? {
         val blockFaces2D = BlockFace2D.values()
-        val boundingBox = PointsInPolygon.BoundingBox(block.x, block.z)
+        val boundingBox = PolygonData.BoundingBox(block.x, block.z)
 
         val path =
             generateSequence<Pair<Block, BlockFace2D?>>(block to null) { (block, blockFace) ->
@@ -95,9 +96,9 @@ class TerraformHelper @Inject internal constructor(
 
         // Check if path is complete
         if (path.lastOrNull()?.getFace(block) == null) return null
-        val fullPath = (path + block).map { Point(it.x, it.z) }
+        val fullPath = (path + block).map { PointKt(it.x, it.z) }
         val pointsInPolygon =
-            PointsInPolygon(path = fullPath, boundingBox = boundingBox)
+            PolygonData(path = fullPath, boundingBox = boundingBox)
         TODO()
     }
 

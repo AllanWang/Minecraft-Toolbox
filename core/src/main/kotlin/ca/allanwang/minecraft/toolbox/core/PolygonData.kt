@@ -1,13 +1,17 @@
 package ca.allanwang.minecraft.toolbox.core
 
-import java.awt.Point
+import java.util.logging.Logger
 import kotlin.math.max
 import kotlin.math.min
 
-class PointsInPolygon(
-    val path: List<Point>,
+data class PolygonData(
+    val path: List<PointKt>,
     val boundingBox: BoundingBox
 ) {
+
+    companion object {
+        private val logger = Logger.getLogger("PointsInPolygon")
+    }
 
     data class BoundingBox(
         var minX: Int,
@@ -37,30 +41,30 @@ class PointsInPolygon(
         internal val data: Array<Array<PointState?>> =
             Array(sizeX) { Array(sizeY) { null } }
 
-        operator fun get(point: Point?): PointState? =
+        operator fun get(point: PointKt?): PointState? =
             if (point == null) null
             else data[point.x][point.y]
 
-        operator fun set(point: Point, state: PointState?) {
+        operator fun set(point: PointKt, state: PointState?) {
             data[point.x][point.y] = state
         }
     }
 
     // Normalize path for now
     private val offsetPath =
-        path.map { Point(it.x - boundingBox.minX, it.y - boundingBox.minY) }
+        path.map { PointKt(it.x - boundingBox.minX, it.y - boundingBox.minY) }
 
     private val coordGraph = offsetPath.groupBySet({ it.x }, { it.y })
 
-    private fun isEdge(point: Point?) =
+    private fun isEdge(point: PointKt?) =
         if (point == null) false else isEdge(point.x, point.y)
 
     private fun isEdge(x: Int, y: Int) = coordGraph[x]?.contains(y) == true
 
-    private val polygonStatus =
+    internal val polygonStatus =
         PolygonStatus(sizeX = boundingBox.sizeX, sizeY = boundingBox.sizeY)
 
-    private val pointsInPolygon: Lazy<List<Point>> = lazy {
+    private val pointsInPolygon: Lazy<List<PointKt>> = lazy {
         resolve()
         extract()
     }
@@ -68,7 +72,7 @@ class PointsInPolygon(
     /**
      * Added a function to indicate that computation can be expensive
      */
-    fun pointsInPolygon(): List<Point> = pointsInPolygon.value
+    fun pointsInPolygon(): List<PointKt> = pointsInPolygon.value
 
     /**
      * The algorithm uses ray casting, with some changes for Minecraft's 2D grid system.
@@ -91,61 +95,73 @@ class PointsInPolygon(
      *
      */
     private fun resolve() {
-        (0..boundingBox.sizeY).forEach { y -> resolveRow(y) }
+        (0 until boundingBox.sizeY).forEach { y -> resolveRow(y) }
     }
 
-    private fun resolveRow(y: Int) {
-        val points = (0..polygonStatus.sizeX).map { x -> Point(x, y) }
-        val fallbackResolve = { point: Point ->
+    private fun resolveRow(y: Int, startX: Int = 0) {
+        val fallbackResolve = { point: PointKt ->
             resolveCol(point.x)
+            true
         }
-        val fallbackFailed = { point: Point ->
-            throw IllegalStateException("Edge along row at ${point.coord()} not resolved")
+        val fallbackFailed = { point: PointKt ->
+            throw IllegalStateException("Edge along row at $point not resolved")
         }
-        resolveAxis(points, fallbackResolve, fallbackFailed)
+        resolveAxis(
+            PointKt(startX, y),
+            { if (it.x < polygonStatus.sizeX - 1) PointKt(it.x + 1, y) else null },
+            fallbackResolve,
+            fallbackFailed
+        )
     }
 
     /**
-     * Copy of [resolveRow] with flipped indices for columns
+     * Copy of [resolveRow] with flipped indices for columns.
+     * This is our fallback call, so further fallback will lead to noop.
      */
-    private fun resolveCol(x: Int) {
-        val points = (0..polygonStatus.sizeY).map { y -> Point(x, y) }
-        val fallbackResolve = { point: Point ->
-            throw IllegalStateException("Failed to fallback resolve col at ${point.coord()}")
+    private fun resolveCol(x: Int, startY: Int = 0) {
+        val fallbackResolve = { _: PointKt -> false }
+        val fallbackFailed = { point: PointKt ->
+            throw IllegalStateException("Edge along col at $point not resolved")
         }
-        val fallbackFailed = { point: Point ->
-            throw IllegalStateException("Edge along col at ${point.coord()} not resolved")
-        }
-        resolveAxis(points, fallbackResolve, fallbackFailed)
+        resolveAxis(
+            PointKt(x, startY),
+            { if (it.y < polygonStatus.sizeY - 1) PointKt(x, it.y + 1) else null },
+            fallbackResolve,
+            fallbackFailed
+        )
     }
 
     private fun resolveAxis(
-        points: List<Point>,
-        fallbackResolve: (Point) -> Unit,
-        fallbackFailed: (Point) -> Nothing
+        startPoint: PointKt,
+        next: (PointKt) -> PointKt?,
+        fallbackResolve: (PointKt) -> Boolean,
+        fallbackFailed: (PointKt) -> Nothing
     ) {
         val prevState = PointState(inside = false, edge = false)
 
         var prevInside = prevState.inside
 
-        points.forEachIndexed { index, point ->
+        for (point in generateSequence(startPoint, next)) {
             val currState = polygonStatus[point]
             if (currState != null) {
                 // already resolved
                 prevInside = currState.inside
-                return@forEachIndexed
+                continue
             }
             val isEdge = isEdge(point)
             val isInside: Boolean? = when {
                 // Base case
                 !isEdge -> prevInside
+                // Edge case; first edge is known
+                point.x == 0 || point.y == 0 -> true
                 // Edge aligned with ray; cannot resolve directly
-                isEdge(points.getOrNull(index + 1)) -> null
+                isEdge(next(point)) -> null
                 // Base case; edge not aligned; flip once
                 else -> !prevInside
             }
             prevInside = if (isInside == null) {
-                fallbackResolve(point)
+                logger.info { "Null previnside $point" }
+                if (!fallbackResolve(point)) return
                 polygonStatus[point]?.inside ?: fallbackFailed(point)
             } else {
                 polygonStatus[point] =
@@ -155,13 +171,14 @@ class PointsInPolygon(
         }
     }
 
-    private fun extract(): List<Point> {
-        val points = mutableListOf<Point>()
-        polygonStatus.data.forEachIndexed { x, nested ->
-            nested.forEachIndexed { y, state ->
+    private fun extract(): List<PointKt> {
+        val points = mutableListOf<PointKt>()
+        (0 until polygonStatus.sizeY).forEach { y ->
+            (0 until polygonStatus.sizeX).forEach { x ->
+                val state = polygonStatus.data[x][y]
                 if (state?.edge == false && state.inside)
                     points.add(
-                        Point(
+                        PointKt(
                             x + boundingBox.minX,
                             y + boundingBox.minY
                         )
