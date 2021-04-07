@@ -35,6 +35,8 @@ class Teleport @Inject internal constructor(
             logger.info { "Face ${sender.facing} ${sender.location.yaw}" }
             teleportRelative(sender.facing)
         }
+
+        override fun TabCompleteContext.tabComplete(): List<String> = listOf("~")
     }
 
     @PluginScope
@@ -43,6 +45,8 @@ class Teleport @Inject internal constructor(
         override suspend fun CommandContext.command() {
             teleportRelative(BlockFace.UP)
         }
+
+        override fun TabCompleteContext.tabComplete(): List<String> = listOf("~")
     }
 
     @PluginScope
@@ -51,6 +55,8 @@ class Teleport @Inject internal constructor(
         override suspend fun CommandContext.command() {
             teleportRelative(BlockFace.DOWN)
         }
+
+        override fun TabCompleteContext.tabComplete(): List<String> = listOf("~")
     }
 }
 
