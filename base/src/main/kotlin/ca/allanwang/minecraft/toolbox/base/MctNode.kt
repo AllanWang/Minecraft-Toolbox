@@ -37,10 +37,10 @@ abstract class MctNode(
 
     protected fun children(vararg nodes: MctNode) {
         nodes.forEach { node ->
-            val key = node.name.toLowerCase(Locale.ENGLISH)
+            val key = node.name.toLowerCaseMct()
             childNames.add(key)
             _children[key] = node
-            node.aliases.map { it.toLowerCase(Locale.ENGLISH) }
+            node.aliases.map { it.toLowerCaseMct() }
                 .forEach { alias ->
                     _children[alias] = node
                 }
@@ -49,7 +49,7 @@ abstract class MctNode(
 
 
     suspend fun handleCommand(context: CommandContext): Boolean {
-        val key = context.args.firstOrNull()?.toLowerCase(Locale.ENGLISH)
+        val key = context.args.firstOrNull()?.toLowerCaseMct()
         if (key == null) {
             context.command()
             return false
@@ -64,7 +64,7 @@ abstract class MctNode(
     }
 
     fun handleTabComplete(context: TabCompleteContext): List<String>? {
-        val key = context.args.firstOrNull()?.toLowerCase(Locale.ENGLISH)
+        val key = context.args.firstOrNull()?.toLowerCaseMct()
             ?: return null
         val child = _children[key]
         if (child != null) {

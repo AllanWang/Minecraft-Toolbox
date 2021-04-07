@@ -25,19 +25,21 @@ class Teleport @Inject internal constructor(
     }
 
     override fun TabCompleteContext.tabComplete(): List<String>? =
-        defaultTabComplete()?.let { listOf("<player>") + it }
+        defaultTabComplete()?.takeIf { it.isNotEmpty() }
+            ?.let { listOf("<player>") + it }
 
     @PluginScope
     class Facing @Inject internal constructor(
     ) : MctNode(name = "facing") {
         override suspend fun CommandContext.command() {
+            logger.info { "Face ${sender.facing} ${sender.location.yaw}" }
             teleportRelative(sender.facing)
         }
     }
 
     @PluginScope
     class Up @Inject internal constructor(
-    ) : MctNode(name = "facing") {
+    ) : MctNode(name = "up") {
         override suspend fun CommandContext.command() {
             teleportRelative(BlockFace.UP)
         }
@@ -45,27 +47,37 @@ class Teleport @Inject internal constructor(
 
     @PluginScope
     class Down @Inject internal constructor(
-    ) : MctNode(name = "facing") {
+    ) : MctNode(name = "down") {
         override suspend fun CommandContext.command() {
             teleportRelative(BlockFace.DOWN)
         }
     }
 }
 
+private const val MAX_RELATIVE_TRAVEL_DISTANCE = 5
+
 private suspend fun CommandContext.travelDistance(): Int {
     val distance = args.firstOrNull()?.toIntOrNull()
-        ?: fail("Please supply travel distance (max 5)")
-    if (distance > 5 || distance < -5) fail("Max travel distance is 5, selected $distance")
+        ?: fail("Please supply travel distance (max $MAX_RELATIVE_TRAVEL_DISTANCE)")
+    if (distance > MAX_RELATIVE_TRAVEL_DISTANCE || distance < -MAX_RELATIVE_TRAVEL_DISTANCE) fail(
+        "Max travel distance is 5, selected $distance"
+    )
     return distance
 }
 
+/**
+ * Move in the provided direction, while keeping pitch (vertical head tilt) and yaw (horizontal head tilt)
+ */
 private suspend fun CommandContext.teleportRelative(direction: BlockFace) {
     val distance = travelDistance()
     val toBlock =
         sender.location.block.getRelative(direction, distance)
-    if (!toBlock.isEmpty && !toBlock.isLiquid) {
-        echo("Destination is not air or liquid")
+    if (!toBlock.isPassable) {
+        echo("Destination not passable (${toBlock.type.name})")
         return
     }
-    sender.teleport(toBlock.location)
+    val loc = toBlock.location.clone()
+    loc.pitch = sender.location.pitch
+    loc.yaw = sender.location.yaw
+    sender.teleport(loc)
 }
