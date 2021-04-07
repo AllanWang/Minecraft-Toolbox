@@ -8,10 +8,11 @@ import javax.inject.Inject
 class MctRootNode @Inject internal constructor(
     compass: Compass,
     beacon: Beacon,
+    teleport: Teleport
 ) : MctNode(name = "mct") {
 
     init {
-        children(compass, beacon)
+        children(compass, beacon, teleport)
     }
 
 }
