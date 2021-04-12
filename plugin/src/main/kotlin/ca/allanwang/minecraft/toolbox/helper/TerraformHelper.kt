@@ -1,8 +1,11 @@
 package ca.allanwang.minecraft.toolbox.helper
 
 import ca.allanwang.minecraft.toolbox.base.PluginScope
+import ca.allanwang.minecraft.toolbox.core.BoundingBox
 import ca.allanwang.minecraft.toolbox.core.PointKt
 import ca.allanwang.minecraft.toolbox.core.PolygonData
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.bukkit.block.Block
 import org.bukkit.block.BlockFace
 import java.awt.Point
@@ -25,7 +28,7 @@ class TerraformHelper @Inject internal constructor(
      * Updates are sent through [boundingBox], which should be centered around the initial block.
      */
     private fun Sequence<Block>.withinBounds(
-        boundingBox: PolygonData.BoundingBox,
+        boundingBox: BoundingBox,
         maxSize: Int
     ): Sequence<Block> = sequence {
         for (element in this@withinBounds) {
@@ -34,29 +37,6 @@ class TerraformHelper @Inject internal constructor(
                 yield(element)
             }
         }
-    }
-
-    private inline fun <T, K, V> Iterable<T>.groupBySet(
-        keySelector: (T) -> K,
-        valueTransform: (T) -> V
-    ): Map<K, Set<V>> {
-        return groupBySetTo(LinkedHashMap(), keySelector, valueTransform)
-    }
-
-    /**
-     * Copy of groupBy, where list is replaced by set.
-     */
-    private inline fun <T, K, V, M : MutableMap<in K, MutableSet<V>>> Iterable<T>.groupBySetTo(
-        destination: M,
-        keySelector: (T) -> K,
-        valueTransform: (T) -> V
-    ): M {
-        for (element in this) {
-            val key = keySelector(element)
-            val set = destination.getOrPut(key) { mutableSetOf() }
-            set.add(valueTransform(element))
-        }
-        return destination
     }
 
     /**
@@ -77,7 +57,7 @@ class TerraformHelper @Inject internal constructor(
         maxSize: Int = 100
     ): List<Point>? {
         val blockFaces2D = BlockFace2D.values()
-        val boundingBox = PolygonData.BoundingBox(block.x, block.z)
+        val boundingBox = BoundingBox(block.x, block.z)
 
         val path =
             generateSequence<Pair<Block, BlockFace2D?>>(block to null) { (block, blockFace) ->
@@ -96,10 +76,13 @@ class TerraformHelper @Inject internal constructor(
 
         // Check if path is complete
         if (path.lastOrNull()?.getFace(block) == null) return null
-        val fullPath = (path + block).map { PointKt(it.x, it.z) }
-        val pointsInPolygon =
-            PolygonData(path = fullPath, boundingBox = boundingBox)
-        TODO()
+        return withContext(Dispatchers.IO) {
+            val fullPath = (path + block).map { PointKt(it.x, it.z) }
+            val pointsInPolygon =
+                PolygonData(path = fullPath, boundingBox = boundingBox)
+
+            pointsInPolygon.pointsInPolygon().map { Point(it.x, it.y) }
+        }
     }
 
 }

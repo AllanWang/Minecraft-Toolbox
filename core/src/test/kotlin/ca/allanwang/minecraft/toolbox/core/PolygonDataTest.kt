@@ -53,7 +53,7 @@ class PolygonDataTest {
         require(sizeX < 50) { "SizeX too big" }
         require(sizeY < 50) { "SizeY too big" }
 
-        val boundingBox = PolygonData.BoundingBox(0, 0, sizeX, sizeY)
+        val boundingBox = BoundingBox(0, 0, sizeX, sizeY)
 
         val path = mutableListOf<PointKt>()
         val inside = mutableListOf<PointKt>()
