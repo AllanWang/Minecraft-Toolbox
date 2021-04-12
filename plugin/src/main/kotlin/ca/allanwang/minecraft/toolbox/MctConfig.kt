@@ -33,6 +33,9 @@ class MctFileConfig(private val config: FileConfiguration) : MctConfig {
         append("/")
         append(sqlDatabase)
         append("?useSSL=false")
+        append("&allowPublicKeyRetrieval=true")
+//        append("&useUnicode=yes")
+//        append("&characterEncoding=UTF-8")
     }
 
     override val sqlDriver: String = "com.mysql.jdbc.Driver"

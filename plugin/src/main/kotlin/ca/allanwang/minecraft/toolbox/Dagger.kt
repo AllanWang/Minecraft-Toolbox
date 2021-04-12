@@ -4,6 +4,7 @@ import ca.allanwang.minecraft.toolbox.base.Mct
 import ca.allanwang.minecraft.toolbox.base.MctNode
 import ca.allanwang.minecraft.toolbox.base.PluginScope
 import ca.allanwang.minecraft.toolbox.base.RootNode
+import ca.allanwang.minecraft.toolbox.base.toLowerCaseMct
 import ca.allanwang.minecraft.toolbox.db.MctDbModule
 import ca.allanwang.minecraft.toolbox.node.MctRootNode
 import com.squareup.sqldelight.sqlite.driver.JdbcDriver
@@ -76,8 +77,6 @@ object MctPluginModule {
     @RootNode
     fun rootNodes(@RootNode rootNodes: Set<@JvmSuppressWildcards MctNode>): Map<String, MctNode> =
         rootNodes.associateBy {
-            it.name.toLowerCase(
-                Locale.ENGLISH
-            )
+            it.name.toLowerCaseMct()
         }
 }

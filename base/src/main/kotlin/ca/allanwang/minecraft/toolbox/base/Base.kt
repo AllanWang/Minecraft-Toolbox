@@ -18,6 +18,7 @@ import org.bukkit.event.block.Action
 import org.bukkit.metadata.FixedMetadataValue
 import org.bukkit.metadata.Metadatable
 import org.bukkit.plugin.Plugin
+import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -96,3 +97,5 @@ fun Block.faceSequence(face: BlockFace): Sequence<Block> =
     generateSequence(this) {
         it.getRelative(face)
     }
+
+fun String.toLowerCaseMct() = toLowerCase(Locale.US)

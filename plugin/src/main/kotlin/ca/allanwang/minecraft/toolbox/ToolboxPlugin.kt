@@ -6,6 +6,7 @@ import ca.allanwang.minecraft.toolbox.base.BukkitCoroutineDispatcher
 import ca.allanwang.minecraft.toolbox.base.CommandContext
 import ca.allanwang.minecraft.toolbox.base.Mct
 import ca.allanwang.minecraft.toolbox.base.TabCompleteContext
+import ca.allanwang.minecraft.toolbox.base.toLowerCaseMct
 import ca.allanwang.minecraft.toolbox.sqldelight.MctDb
 import com.mysql.cj.jdbc.MysqlDataSource
 import kotlinx.coroutines.CoroutineScope
@@ -21,6 +22,7 @@ import org.bukkit.event.Event
 import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
 import java.util.*
+import java.util.logging.Level
 import java.util.logging.Logger
 
 class ToolboxPlugin : JavaPlugin() {
@@ -35,10 +37,15 @@ class ToolboxPlugin : JavaPlugin() {
         } catch (e: NullPointerException) {
             throw IllegalStateException("Missing config")
         }
-        val dataSource = MysqlDataSource().apply {
-            setURL(mctConfig.sqlUrl)
-            user = mctConfig.sqlUsername
-            password = mctConfig.sqlPassword
+        val dataSource = try {
+            MysqlDataSource().apply {
+                setURL(mctConfig.sqlUrl)
+                user = mctConfig.sqlUsername
+                password = mctConfig.sqlPassword
+            }
+        } catch (e: Exception) {
+            logger.log(Level.SEVERE, e) { "Failed to create data source" }
+            throw IllegalStateException("Missing data source")
         }
         val mct = object : Mct {
             override val mctLogger: Logger = logger
@@ -65,7 +72,6 @@ class ToolboxPlugin : JavaPlugin() {
         component.rootNodes() // Init everything
         logger.info("Hello world")
         server.pluginManager.registerEvents(mctEventHandler, this)
-        server.helpMap.helpTopics
     }
 
     private fun initConfig() {
@@ -100,7 +106,7 @@ class ToolboxPlugin : JavaPlugin() {
     ): Boolean {
         if (sender !is Player) return false
         val mctNode =
-            component.rootNodes()[command.name.toLowerCase(Locale.ENGLISH)]
+            component.rootNodes()[command.name.toLowerCaseMct()]
                 ?: return false
         val context = CommandContext(
             sender = sender,
@@ -124,7 +130,7 @@ class ToolboxPlugin : JavaPlugin() {
         args: Array<out String>
     ): List<String>? {
         val mctNode =
-            component.rootNodes()[command.name.toLowerCase(Locale.ENGLISH)]
+            component.rootNodes()[command.name.toLowerCaseMct()]
                 ?: return null
         val context = TabCompleteContext(
             sender = sender,
