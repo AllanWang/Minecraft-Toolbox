@@ -1,7 +1,10 @@
 package ca.allanwang.minecraft.toolbox.core
 
+import com.google.common.truth.IterableSubject
+import com.google.common.truth.Ordered
 import com.google.common.truth.Truth.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
 import kotlin.test.fail
 
 class PolygonDataTest {
@@ -82,10 +85,18 @@ class PolygonDataTest {
         val pretty = polygon.prettyString()
 
         assertThat(polygon).isEqualTo(pretty.parsePolygonTestData())
+        assertThat(polygon.data.pointsInPolygon()).hasPoints(polygon.inside)
     }
 
-    private fun points(vararg points: Pair<Int, Int>): List<PointKt> =
-        points.map { (x, y) -> PointKt(x, y) }
+    /**
+     * Compares data equality within point collection.
+     * Cannot use isEqualsTo as collection type may not be a list.
+     */
+    private fun IterableSubject.hasPoints(vararg points: Pair<Int, Int>): Ordered =
+        hasPoints(points.map { (x, y) -> PointKt(x, y) })
+
+    private fun IterableSubject.hasPoints(points: Collection<PointKt>): Ordered =
+        containsExactlyElementsIn(points)
 
     @Test
     fun basicParse() {
@@ -100,16 +111,14 @@ class PolygonDataTest {
         assertThat(data.sizeX).isEqualTo(4)
         assertThat(data.sizeY).isEqualTo(3)
         assertThat(data.inside).isEmpty()
-        assertThat(data.path).isEqualTo(
-            points(
-                0 to 0,
-                1 to 0,
-                2 to 0,
-                0 to 1,
-                2 to 1,
-                0 to 2,
-                2 to 2
-            )
+        assertThat(data.path).hasPoints(
+            0 to 0,
+            1 to 0,
+            2 to 0,
+            0 to 1,
+            2 to 1,
+            0 to 2,
+            2 to 2
         )
     }
 
@@ -122,9 +131,31 @@ class PolygonDataTest {
         . . . x x x x x .
     """.trimIndent()
 
+    val path2 = """
+        x x x . . . x x x
+        x - x x . x x - x
+        x - - x x x - - x
+        x x - - - - - x x
+        x - - x x x - - x
+        x - x x . x x - x
+        x x x . . . x x x
+    """.trimIndent()
+
+    val paths = listOf(path1, path2)
+
+    /**
+     * Test drawn paths against themselves.
+     * Ensures that original string = parse and pretty point.
+     * Ensures that [PolygonData.pointsInPolygon] works as expected.
+     */
     @Test
-    fun complexParse() {
-        path1.checkParsePolygon()
+    fun complexParseAll() {
+        assertThat(paths.size).isGreaterThan(0)
+        paths.forEachIndexed { i, path ->
+            assertDoesNotThrow("Failure for path ${i + 1}") {
+                path.checkParsePolygon()
+            }
+        }
     }
 
     @Test
@@ -132,23 +163,21 @@ class PolygonDataTest {
         val testData =
             path1.parsePolygonTestData()
 
-        assertThat(testData.data.pointsInPolygon()).isEqualTo(
-            points(
-                1 to 1,
-                7 to 1,
-                1 to 2,
-                2 to 2,
-                7 to 2,
-                2 to 3,
-                3 to 3,
-                4 to 3,
-                5 to 3,
-                6 to 3,
-                7 to 3,
-                4 to 4,
-                5 to 4,
-                6 to 4,
-            )
+        assertThat(testData.data.pointsInPolygon()).hasPoints(
+            1 to 1,
+            7 to 1,
+            1 to 2,
+            2 to 2,
+            7 to 2,
+            2 to 3,
+            3 to 3,
+            4 to 3,
+            5 to 3,
+            6 to 3,
+            7 to 3,
+            4 to 4,
+            5 to 4,
+            6 to 4,
         )
     }
 

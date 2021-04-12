@@ -32,159 +32,301 @@ data class PolygonData(
         val maxSize: Int get() = max(sizeX, sizeY)
     }
 
-    internal data class PointState(
-        val inside: Boolean,
-        val edge: Boolean
-    )
-
-    internal class PolygonStatus(val sizeX: Int, val sizeY: Int) {
-        internal val data: Array<Array<PointState?>> =
-            Array(sizeX) { Array(sizeY) { null } }
-
-        operator fun get(point: PointKt?): PointState? =
-            if (point == null) null
-            else data[point.x][point.y]
-
-        operator fun set(point: PointKt, state: PointState?) {
-            data[point.x][point.y] = state
-        }
-    }
-
-    // Normalize path for now
-    private val offsetPath =
-        path.map { PointKt(it.x - boundingBox.minX, it.y - boundingBox.minY) }
-
-    private val coordGraph = offsetPath.groupBySet({ it.x }, { it.y })
-
-    private fun isEdge(point: PointKt?) =
-        if (point == null) false else isEdge(point.x, point.y)
-
-    private fun isEdge(x: Int, y: Int) = coordGraph[x]?.contains(y) == true
-
-    internal val polygonStatus =
-        PolygonStatus(sizeX = boundingBox.sizeX, sizeY = boundingBox.sizeY)
-
-    private val pointsInPolygon: Lazy<List<PointKt>> = lazy {
-        resolve()
-        extract()
-    }
+    private val floodFill: FloodFill by lazy { FloodFill() }
 
     /**
-     * Added a function to indicate that computation can be expensive
+     * Implementation of Flood Fill, or more specifically, Span Fill.
+     *
+     * https://en.wikipedia.org/wiki/Flood_fill#Span_Filling
+     *
+     * This is heavily inspired by
+     * http://www.adammil.net/blog/v126_A_More_Efficient_Flood_Fill.html
+     * and is Kotlinized in this class.
+     *
+     * For the sake of documentation, we will draw grids where
+     * - `o` represents a point inside the polygon,
+     * - `.` represents a point outside the polygon (or a point along the path)
+     *
+     * Points are written as (x, y), where x = point along the row and y = point along the col.
+     * The `o` point below is (2, 1).
+     * -----------
+     * . . . .
+     * . . o .
+     * . . . .
      */
-    fun pointsInPolygon(): List<PointKt> = pointsInPolygon.value
+    private inner class FloodFill {
 
-    /**
-     * The algorithm uses ray casting, with some changes for Minecraft's 2D grid system.
-     * We define a point as within the polygon if a ray from the point to any direction intersects an odd number of edges.
-     * Unfortunately, there are many cases where edges will align with the ray, so we'd need to fallback with a perpendicular ray instead.
-     * Given the constraints of the path, each path point will only have neighbouring path points on one of the axes.
-     * We wish to find the status of all points in the [boundingBox], so we can improve our runtime by computing all points along
-     * a ray, with a ray coming from the edge of the bounding box. This could be done with sequences, but since we have a fallback ray cast,
-     * we need to use dynamic programming to retain information. For points in the edge, we define them as "inside" the polygon
-     * if the nearest non edge point down or to the right of the point is inside.
-     * In other words, the true edge is effectively along the top and left of the edge block.
-     * This is unambiguous due to our restrictions for paths, where edges cannot come into contact with another part of the polygon.
-     *
-     * A pure data variant of finding points in polygon.
-     *
-     * [path] is a list of points within [boundingBox], forming a polygon as defined in [pointsInPolygon].
-     * [boundingBox] is a grid constraint when computing points.
-     *
-     * Returns list of points within polygon.
-     *
-     */
-    private fun resolve() {
-        (0 until boundingBox.sizeY).forEach { y -> resolveRow(y) }
-    }
-
-    private fun resolveRow(y: Int, startX: Int = 0) {
-        val fallbackResolve = { point: PointKt ->
-            resolveCol(point.x)
-            true
-        }
-        val fallbackFailed = { point: PointKt ->
-            throw IllegalStateException("Edge along row at $point not resolved")
-        }
-        resolveAxis(
-            PointKt(startX, y),
-            { if (it.x < polygonStatus.sizeX - 1) PointKt(it.x + 1, y) else null },
-            fallbackResolve,
-            fallbackFailed
-        )
-    }
-
-    /**
-     * Copy of [resolveRow] with flipped indices for columns.
-     * This is our fallback call, so further fallback will lead to noop.
-     */
-    private fun resolveCol(x: Int, startY: Int = 0) {
-        val fallbackResolve = { _: PointKt -> false }
-        val fallbackFailed = { point: PointKt ->
-            throw IllegalStateException("Edge along col at $point not resolved")
-        }
-        resolveAxis(
-            PointKt(x, startY),
-            { if (it.y < polygonStatus.sizeY - 1) PointKt(x, it.y + 1) else null },
-            fallbackResolve,
-            fallbackFailed
-        )
-    }
-
-    private fun resolveAxis(
-        startPoint: PointKt,
-        next: (PointKt) -> PointKt?,
-        fallbackResolve: (PointKt) -> Boolean,
-        fallbackFailed: (PointKt) -> Nothing
-    ) {
-        val prevState = PointState(inside = false, edge = false)
-
-        var prevInside = prevState.inside
-
-        for (point in generateSequence(startPoint, next)) {
-            val currState = polygonStatus[point]
-            if (currState != null) {
-                // already resolved
-                prevInside = currState.inside
-                continue
-            }
-            val isEdge = isEdge(point)
-            val isInside: Boolean? = when {
-                // Base case
-                !isEdge -> prevInside
-                // Edge case; first edge is known
-                point.x == 0 || point.y == 0 -> true
-                // Edge aligned with ray; cannot resolve directly
-                isEdge(next(point)) -> null
-                // Base case; edge not aligned; flip once
-                else -> !prevInside
-            }
-            prevInside = if (isInside == null) {
-                logger.info { "Null previnside $point" }
-                if (!fallbackResolve(point)) return
-                polygonStatus[point]?.inside ?: fallbackFailed(point)
-            } else {
-                polygonStatus[point] =
-                    PointState(inside = isInside, edge = isEdge)
-                isInside
-            }
-        }
-    }
-
-    private fun extract(): List<PointKt> {
-        val points = mutableListOf<PointKt>()
-        (0 until polygonStatus.sizeY).forEach { y ->
-            (0 until polygonStatus.sizeX).forEach { x ->
-                val state = polygonStatus.data[x][y]
-                if (state?.edge == false && state.inside)
-                    points.add(
-                        PointKt(
-                            x + boundingBox.minX,
-                            y + boundingBox.minY
-                        )
+        /**
+         * Shared memory required for algorithm.
+         */
+        private inner class Context(
+            /**
+             * Flag grid to indicate visited points.
+             * Normalized such that (minX, minY) is (0, 0).
+             * Starts with offset path points set to true.
+             */
+            val flagged: Array<BooleanArray>,
+            /**
+             * Mutable collection for gathering filled points.
+             * Values are _not_ normalized
+             */
+            val filledPoints: MutableSet<PointKt>,
+        ) {
+            /**
+             * Add denormalized point to collection
+             */
+            fun addFilledPoint(x: Int, y: Int) {
+                filledPoints.add(
+                    PointKt(
+                        x + boundingBox.minX,
+                        y + boundingBox.minY
                     )
+                )
             }
         }
-        return points
+
+        private operator fun Map<Int, Set<Int>>.get(x: Int, y: Int) =
+            get(x)?.contains(y) == true
+
+        /**
+         * Computed points within the polygon. Points are not offsetted, and are computed via [compute].
+         * Result is sorted, and is null prior to computation.
+         */
+        var filledPoints: Collection<PointKt>? = null
+
+        private operator fun Array<BooleanArray>.get(x: Int, y: Int) =
+            this[x][y]
+
+        private operator fun Array<BooleanArray>.set(
+            x: Int,
+            y: Int,
+            value: Boolean
+        ) {
+            this[x][y] = value
+        }
+
+        /**
+         * Get points in polygon (from flood fill). Result is cached.
+         */
+        fun pointsInPolygon(): Collection<PointKt> =
+            filledPoints ?: compute().also { filledPoints = it }
+
+        /**
+         * Computation for [pointsInPolygon]
+         */
+        private fun compute(): Collection<PointKt> {
+            // Normalized point path
+            val offsetPath =
+                path.map {
+                    PointKt(
+                        it.x - boundingBox.minX,
+                        it.y - boundingBox.minY
+                    )
+                }
+
+            // Normalized flag grid
+            val flagged: Array<BooleanArray> =
+                Array(boundingBox.sizeX) { BooleanArray(boundingBox.sizeY) }
+            // Mark edges as visited to create boundary
+            offsetPath.forEach {
+                flagged[it.x, it.y] = true
+            }
+            // Context for computation. GC'd after use
+            val context =
+                Context(flagged = flagged, filledPoints = mutableSetOf())
+            /*
+             * Given the requirements from our path and bounding box, we know that the left most edge
+             * exists along x = 0, and that the path is never adjacent to ourselves. With that,
+             * we know that a point is inside the polygon if it is immediately to the right of a path point at x = 0.
+             * This also translates to the first point at x = 1 that is below a path point, which is easier to compute.
+             */
+            val initialY =
+                offsetPath.asSequence().filter { it.x == 1 }.map { it.y }
+                    .minOrNull()?.let { it + 1 }
+                    ?: throw IllegalStateException("Invalid path or bounding box.")
+
+            context.subFill(1, initialY)
+            return context.filledPoints.sorted()
+        }
+
+        /**
+         * Variant of [subFill] that crawls to the top left non flagged point beforehand.
+         * As a slight optimization, moving up is preferred to moving left, so we try to move upwards whenever possible.
+         *
+         * In the example below, starting at (4, 2) will result in a subfill starting at (3, 1) rather than (1, 2)
+         * -------------
+         * . . . . .
+         * . . . o .
+         * . o o o o
+         */
+        private fun Context.subFillFromTopLeft(testX: Int, testY: Int) {
+            var x = testX
+            var y = testY
+            while (true) {
+                val currX = x
+                val currY = y
+                while (y != 0 && !flagged[x, y - 1]) y--
+                if (x != 0 && !flagged[x - 1, y]) x--
+                if (x == currX && y == currY) break
+            }
+            subFill(x, y)
+        }
+
+        /**
+         * Main part of flood fill.
+         * The basis of span filling is to fill points along a row, and to move up and down to fill other rows.
+         * In our algorithm, we start on the top left, and move our way down and to the right.
+         * Each subFill is responsible for filling rows up until a boundary is reached,
+         * and for filling subsequent rows downwards when the start point is reachable from the previous start point.
+         * Recursion occurs for cases where a boundary splits a row in two, such as a `V` shaped polygon.
+         *
+         * Algorithm will start at [testX], [testY]. That point is expected not to be flagged.
+         */
+        private fun Context.subFill(testX: Int, testY: Int) {
+            // Provided point is not flagged; fast return
+            if (flagged[testX, testY]) return
+            var x = testX
+            var y = testY
+            var prevRowLength = 0
+            do {
+                // Init. Mark current row length as 0 and add start x marker.
+                var rowLength = 0
+                var startX = x
+                /*
+                 * Handles cases such as
+                 *
+                 * ---------------------
+                 * . o o o
+                 * . . o o
+                 *
+                 * where the start x is rightwards of the previous start x.
+                 * To support this, we shorted the previous row length and increment our start x until we reach an unflagged value,
+                 * or until the prev row length is empty.
+                 *
+                 * Unlike the reference algorithm, we do not check that the last row length != 0.
+                 * This is because we have a lot of unnecessary loops through recursion, and we wish to fast stop as soon as possible
+                 */
+                if (flagged[x, y]) {
+                    ((x + 1) until (x + prevRowLength))
+                        .asSequence()
+//                        .onEach { prevRowLength-- }
+                        .takeWhile { flagged[it, y] }
+                        .count().let {
+                            prevRowLength -= it + 1
+                            x += it + 1
+                            startX = x
+                        }
+//                    do {
+//                        if (--prevRowLength <= 0) return
+//                    } while (flagged[++x, y])
+//                    startX = x
+                }
+                /*
+                 * Handles cases such as
+                 *
+                 * ---------------------
+                 * . . o o
+                 * . o o o
+                 *
+                 * where the start x is leftwards of the previous start x.
+                 * To support this, we increment both current and prev row length, and move x backwards;
+                 * incrementing rows is necessary to broaden our row search for adjacent rows.
+                 * Additionally, we will flag each point we go through and add them to filled points so as to avoid duplicate handling;
+                 * as a result, we do not change start x.
+                 * During our iteration, we check the row above for unmarked points,
+                 * and recurse if necessary to handle previously unreachable rows (to the top left).
+                 *
+                 * Example, with `x` marking first starting point:
+                 *
+                 * ---------------------
+                 * o o o . . x o o
+                 * . o o o o o o .
+                 */
+                else {
+                    ((x - 1) downTo 1)
+                        .asSequence()
+                        .takeWhile { !flagged[it, y] }
+                        .onEach {
+                            addFilledPoint(it, y)
+                            flagged[it, y] = true
+                            if (y != 0 && !flagged[it, y - 1])
+                                subFillFromTopLeft(it, y - 1)
+                        }
+                        .count().let {
+                            x -= it
+                            rowLength += it
+                            prevRowLength += it
+                        }
+//                    while (x != 0 && !flagged[x - 1, y]) {
+//                        x--
+//                        addFilledPoint(x, y)
+//                        flagged[x, y] = true
+//                        if (y != 0 && !flagged[x, y - 1])
+//                            subFillFromTopLeft(x, y - 1)
+//                        rowLength++
+//                        prevRowLength++
+//                    }
+                }
+                /*
+                 * Scan through (remainder of) current row. Flag new points and add to filled points,
+                 * Update start x and rowLength to match last point in row.
+                 */
+                (startX until boundingBox.sizeX)
+                    .asSequence()
+                    .takeWhile { !flagged[it, y] }
+                    .onEach {
+                        addFilledPoint(it, y)
+                        flagged[it, y] = true
+                    }
+                    .count().let {
+                        startX += it
+                        rowLength += it
+                    }
+
+                /*
+                 * Handles end cases such as
+                 *
+                 * ---------------------
+                 * o o o o o
+                 * o o o . o
+                 *
+                 * where a boundary exists in the current row.
+                 * In this case, our row length is less than before,
+                 * and we can iterate through the remaining points in the prev row length and check for unflagged points (potential new rows).
+                 */
+                if (rowLength < prevRowLength) {
+                    ((startX + 1) until (x + prevRowLength))
+                        .asSequence()
+                        .filterNot { flagged[it, y] }
+                        .forEach { subFill(it, y) }
+                }
+                /*
+                 * Handles end cases such as
+                 *
+                 * ---------------------
+                 * o o o . o
+                 * o o o o o
+                 *
+                 * where a boundary exists in the previous row.
+                 * In this case, our row length is larger than before,
+                 * and we can iterate through the remaining points after the prev row length and check for unflagged points (potential new rows).
+                 */
+                else if (rowLength > prevRowLength && y != 0) {
+                    ((x + prevRowLength + 1) until startX)
+                        .asSequence()
+                        .filterNot { flagged[it, y - 1] }
+                        .forEach { subFillFromTopLeft(it, y - 1) }
+                }
+
+                prevRowLength = rowLength
+            } while (prevRowLength != 0 && ++y < boundingBox.sizeY)
+        }
     }
+
+    /**
+     * Returns a collection of points that are within the polygon.
+     * Points include values in [path], and are sorted (by y, then x)
+     */
+    fun pointsInPolygon(): Collection<PointKt> = floodFill.pointsInPolygon()
+
 }
