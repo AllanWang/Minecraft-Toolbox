@@ -19,8 +19,8 @@ data class BoundingBox(
         maxY = max(maxY, y)
     }
 
-    inline val sizeX: Int get() = maxX - minX
-    inline val sizeY: Int get() = maxY - minY
+    inline val sizeX: Int get() = maxX - minX + 1
+    inline val sizeY: Int get() = maxY - minY + 1
 
     val maxSize: Int get() = max(sizeX, sizeY)
 }

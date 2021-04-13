@@ -9,6 +9,7 @@ import ca.allanwang.minecraft.toolbox.base.TabCompleteContext
 import ca.allanwang.minecraft.toolbox.base.toLowerCaseMct
 import ca.allanwang.minecraft.toolbox.sqldelight.MctDb
 import com.mysql.cj.jdbc.MysqlDataSource
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -51,7 +52,9 @@ class ToolboxPlugin : JavaPlugin() {
             override val mctLogger: Logger = logger
 
             override val mctScope: CoroutineScope = CoroutineScope(
-                BukkitCoroutineDispatcher(this@ToolboxPlugin)
+                BukkitCoroutineDispatcher(this@ToolboxPlugin) + CoroutineExceptionHandler { _, throwable ->
+                    logger.log(Level.SEVERE, "coroutine failure", throwable)
+                }
             )
 
             val eventFlow: MutableSharedFlow<Event> =

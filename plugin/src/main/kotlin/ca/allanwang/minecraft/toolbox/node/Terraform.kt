@@ -3,10 +3,11 @@ package ca.allanwang.minecraft.toolbox.node
 import ca.allanwang.minecraft.toolbox.base.CommandContext
 import ca.allanwang.minecraft.toolbox.base.MctNode
 import ca.allanwang.minecraft.toolbox.base.PluginScope
+import ca.allanwang.minecraft.toolbox.base.TabCompleteContext
+import ca.allanwang.minecraft.toolbox.base.blockBelow
 import ca.allanwang.minecraft.toolbox.helper.TerraformHelper
 import org.bukkit.Material
 import org.bukkit.block.Block
-import org.bukkit.block.BlockFace
 import java.awt.Point
 import javax.inject.Inject
 
@@ -26,6 +27,9 @@ class Terraform @Inject internal constructor(
         override val help: String =
             "Remove blocks above path up to specified height."
 
+        override fun TabCompleteContext.tabComplete(): List<String> =
+            listOf("~")
+
         override suspend fun CommandContext.command() {
             innerPointSequence(up = false, terraformHelper = terraformHelper) {
                 it.type = Material.AIR
@@ -40,6 +44,9 @@ class Terraform @Inject internal constructor(
         override val help: String =
             "Remove blocks below path down to specified depth."
 
+        override fun TabCompleteContext.tabComplete(): List<String> =
+            listOf("~")
+
         override suspend fun CommandContext.command() {
             innerPointSequence(up = false, terraformHelper = terraformHelper) {
                 it.type = Material.AIR
@@ -53,6 +60,9 @@ class Terraform @Inject internal constructor(
     ) : MctNode(name = "fill") {
         override val help: String =
             "Fill blocks inside path down to specified depth."
+
+        override fun TabCompleteContext.tabComplete(): List<String> =
+            listOf("~")
 
         override suspend fun CommandContext.command() {
             innerPointSequence(up = false, terraformHelper = terraformHelper) {
@@ -75,7 +85,8 @@ private suspend fun CommandContext.height(name: String = "height"): Int {
 }
 
 private suspend fun CommandContext.innerPathPoints(terraformHelper: TerraformHelper): List<Point> {
-    val startBlock = sender.location.block.getRelative(BlockFace.SOUTH)
+    val startBlock = sender.blockBelow
+    logger.info { "On ${startBlock.type}" }
     return terraformHelper.pointsInPolygon(startBlock, maxSize = MAX_PATH_SIZE)
         ?: fail(buildString {
             append("Not standing on valid path. ")
@@ -93,8 +104,9 @@ private suspend fun CommandContext.innerPointSequence(
     val points = innerPathPoints(terraformHelper)
     val world = sender.world
 
+    // Range starts at -2 because ground level is below the path, which is below the player.
     val yRange =
-        if (up) ((sender.location.blockY - 1)..(sender.location.blockY - 1 + height)) else ((sender.location.blockY - 1) downTo (sender.location.blockY - 1 - height))
+        if (up) ((sender.location.blockY - 2)..(sender.location.blockY - 2 + height)) else ((sender.location.blockY - 2) downTo (sender.location.blockY - 2 - height))
     yRange.forEach { y ->
         points.forEach { p ->
             val block = world.getBlockAt(p.x, y, p.y)

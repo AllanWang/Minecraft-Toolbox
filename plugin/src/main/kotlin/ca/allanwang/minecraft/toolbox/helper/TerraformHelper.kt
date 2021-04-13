@@ -9,18 +9,22 @@ import kotlinx.coroutines.withContext
 import org.bukkit.block.Block
 import org.bukkit.block.BlockFace
 import java.awt.Point
+import java.util.logging.Logger
 import javax.inject.Inject
 
 @PluginScope
 class TerraformHelper @Inject internal constructor(
-
+    private val logger: Logger
 ) {
 
-    private enum class BlockFace2D(val blockFace: BlockFace) {
-        North(BlockFace.NORTH),
-        South(BlockFace.SOUTH),
-        East(BlockFace.EAST),
-        West(BlockFace.WEST)
+    private enum class BlockFace2D(
+        val blockFace: BlockFace,
+        val oppositeBlockFace: BlockFace
+    ) {
+        North(BlockFace.NORTH, BlockFace.SOUTH),
+        South(BlockFace.SOUTH, BlockFace.NORTH),
+        East(BlockFace.EAST, BlockFace.WEST),
+        West(BlockFace.WEST, BlockFace.EAST)
     }
 
     /**
@@ -60,13 +64,17 @@ class TerraformHelper @Inject internal constructor(
         val boundingBox = BoundingBox(block.x, block.z)
 
         val path =
-            generateSequence<Pair<Block, BlockFace2D?>>(block to null) { (block, blockFace) ->
+            generateSequence<Pair<Block, BlockFace2D?>>(block to null) { (block, blockFace2D) ->
                 val candidates = blockFaces2D.mapNotNull {
-                    if (it == blockFace) return@mapNotNull null
+                    // Ignore candidate that would map back to previous block
+                    if (it.blockFace == blockFace2D?.oppositeBlockFace) return@mapNotNull null
                     val next = block.getRelative(it.blockFace)
                     if (next.isEmpty) null else next to it
                 }
-                if (candidates.size != 1) null else candidates.first()
+                // First block will have 2 valid faces; subsequent will only have one.
+                if (blockFace2D == null && candidates.size != 2) return@generateSequence null
+                if (blockFace2D != null && candidates.size != 1) return@generateSequence null
+                candidates.first()
             }
                 .drop(1)
                 .map { it.first }
@@ -75,7 +83,12 @@ class TerraformHelper @Inject internal constructor(
                 .toList()
 
         // Check if path is complete
-        if (path.lastOrNull()?.getFace(block) == null) return null
+        if (path.size < 8 || path.lastOrNull()
+                ?.getFace(block) == null
+        ) return null
+
+        logger.info { "Created path" }
+
         return withContext(Dispatchers.IO) {
             val fullPath = (path + block).map { PointKt(it.x, it.z) }
             val pointsInPolygon =
