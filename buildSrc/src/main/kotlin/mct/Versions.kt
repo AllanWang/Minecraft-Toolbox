@@ -10,17 +10,8 @@ object Versions {
     // https://hub.spigotmc.org/nexus/content/repositories/public/org/bukkit/bukkit/maven-metadata.xml
     const val bukkit = "1.15.2-R0.1-SNAPSHOT"
 
-    // https://github.com/Shynixn/MCCoroutine/releases/
-    const val mccoroutine = "1.2.0"
-
     // https://github.com/google/dagger/releases/tag/dagger-2.28.3
     const val dagger = "2.28.3"
-
-    // https://github.com/google/guava
-    const val guava = "30.1.1-jre"
-
-    // https://github.com/JetBrains/Exposed/releases
-    const val exposed = "0.29.1"
 
     // https://github.com/cashapp/sqldelight/releases
     const val sqldelight = "1.4.4"
@@ -36,9 +27,6 @@ object Versions {
 
     // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
     const val junit = "5.7.0"
-
-    // https://github.com/npryce/hamkrest/releases
-    const val hamkrest = "1.8.0.1"
 
     // https://github.com/google/truth/releases/
     const val truth = "1.1.2"

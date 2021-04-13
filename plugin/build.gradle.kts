@@ -14,7 +14,6 @@ dependencies {
 
     testImplementation(kotlin("reflect"))
     testImplementation(mct.Dependencies.h2)
-//    testImplementation(mct.Dependencies.guava)
     testImplementation(mct.Dependencies.dagger)
     kaptTest(mct.Dependencies.daggerKapt)
     testCompileOnly(mct.Dependencies.bukkit)
