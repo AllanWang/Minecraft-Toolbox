@@ -1,6 +1,7 @@
 package ca.allanwang.minecraft.toolbox.base
 
 import kotlinx.coroutines.CancellationException
+import org.bukkit.Location
 import org.bukkit.Server
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
@@ -27,9 +28,11 @@ interface NodeContext<T : NodeContext<T>> {
 
     fun echo(text: String) = sender.sendMessage(text)
 
-    suspend fun String?.nameToPlayer(): Player =
-        this?.let { name -> server.getPlayer(name) }
-            ?: fail("Player $this does not exist")
+    fun String?.nameToPlayerOrNull(): Player? =
+        if (this != null) server.getPlayer(this) else null
+
+    suspend fun String?.nameToPlayer(): Player = nameToPlayerOrNull()
+        ?: fail("Player $this does not exist")
 }
 
 class CommandContext(

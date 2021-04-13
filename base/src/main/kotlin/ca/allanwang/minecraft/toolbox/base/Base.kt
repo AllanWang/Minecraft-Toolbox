@@ -13,11 +13,13 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.block.Block
 import org.bukkit.block.BlockFace
+import org.bukkit.entity.Player
 import org.bukkit.event.Event
 import org.bukkit.event.block.Action
 import org.bukkit.metadata.FixedMetadataValue
 import org.bukkit.metadata.Metadatable
 import org.bukkit.plugin.Plugin
+import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -92,7 +94,16 @@ fun Block.isNear(material: Material, range: Int): Boolean {
     return false
 }
 
+val Player.blockBelow: Block
+    get() = world.getBlockAt(
+        location.blockX,
+        location.blockY - 1,
+        location.blockZ
+    )
+
 fun Block.faceSequence(face: BlockFace): Sequence<Block> =
     generateSequence(this) {
         it.getRelative(face)
     }
+
+fun String.toLowerCaseMct() = toLowerCase(Locale.US)

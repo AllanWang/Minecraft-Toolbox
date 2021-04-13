@@ -2,6 +2,7 @@ import java.util.*
 
 dependencies {
     implementation(rootProject)
+    implementation(project(":core"))
     implementation(project(":base"))
     implementation(kotlin("reflect"))
     compileOnly(mct.Dependencies.bukkit)
