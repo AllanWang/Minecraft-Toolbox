@@ -31,7 +31,7 @@ class Terraform @Inject internal constructor(
             listOf("~")
 
         override suspend fun CommandContext.command() {
-            innerPointSequence(up = false, terraformHelper = terraformHelper) {
+            innerPointSequence(up = true, terraformHelper = terraformHelper) {
                 it.type = Material.AIR
             }
         }
