@@ -9,11 +9,12 @@ class MctRootNode @Inject internal constructor(
     compass: Compass,
     beacon: Beacon,
     teleport: Teleport,
-    terraform: Terraform
+    terraform: Terraform,
+    template: Template,
 ) : MctNode(name = "mct") {
 
     init {
-        children(compass, beacon, teleport, terraform)
+        children(compass, beacon, teleport, terraform, template)
     }
 
 }
