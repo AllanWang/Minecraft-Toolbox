@@ -100,7 +100,7 @@ class Terraform @Inject internal constructor(
 }
 
 private const val MAX_HEIGHT = 50
-private const val MAX_PATH_SIZE = 100
+private const val MAX_AXIS_LENGTH = 100
 
 // Max distance from player to terraform location
 private const val TERRAFORM_MAX_REMOTE_DISTANCE = 50
@@ -117,11 +117,14 @@ private suspend fun CommandContext.height(name: String = "height"): Int {
 private suspend fun CommandContext.innerPathPoints(terraformHelper: TerraformHelper): List<Point> {
     val startBlock = sender.blockBelow
     logger.info { "On ${startBlock.type}" }
-    return terraformHelper.pointsInPolygon(startBlock, maxSize = MAX_PATH_SIZE)
+    return terraformHelper.pointsInPolygon(
+        startBlock,
+        maxSize = MAX_AXIS_LENGTH
+    )
         ?: fail(buildString {
             append("Not standing on valid path. ")
             append("Make sure blocks form a polygon, and that each block in the path is adjacent to exactly 2 blocks. ")
-            append("Max path size is $MAX_PATH_SIZE. ")
+            append("Max path size is $MAX_AXIS_LENGTH. ")
         })
 }
 
@@ -185,6 +188,10 @@ private suspend fun CommandContext.innerPointSequencePath(
 private suspend fun CommandContext.innerPointSequencePrism(action: (Block) -> Unit) {
     val boundingPrism = prismPoints()
     val world = sender.world
+
+    if (boundingPrism.maxSize > MAX_AXIS_LENGTH) {
+        fail("Terraform size is too big. Max axis length is $MAX_AXIS_LENGTH, currently ${boundingPrism.sizeX} x ${boundingPrism.sizeY} x ${boundingPrism.sizeZ}")
+    }
 
     fun minAbs(ref: Int, min: Int, max: Int) =
         min(abs(ref - min), abs(ref - max))
