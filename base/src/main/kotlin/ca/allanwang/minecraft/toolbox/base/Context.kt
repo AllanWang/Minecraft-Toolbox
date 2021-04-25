@@ -1,7 +1,6 @@
 package ca.allanwang.minecraft.toolbox.base
 
 import kotlinx.coroutines.CancellationException
-import org.bukkit.Location
 import org.bukkit.Server
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
@@ -45,16 +44,17 @@ class CommandContext(
     override val plugin: Plugin,
 ) : NodeContext<CommandContext> {
 
-    override fun child(): CommandContext = CommandContext(
+    override fun child(): CommandContext = subDepth(depth + 1)
+
+    fun subDepth(newDepth: Int): CommandContext = CommandContext(
         sender = sender,
         command = command,
         label = label,
-        args = origArgs.sliceArray(depth + 1..origArgs.lastIndex),
+        args = origArgs.sliceArray(newDepth..origArgs.lastIndex),
         origArgs = origArgs,
-        depth = depth + 1,
+        depth = newDepth,
         plugin = plugin,
     )
-
 }
 
 class TabCompleteContext(
