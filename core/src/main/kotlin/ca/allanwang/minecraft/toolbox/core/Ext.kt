@@ -26,3 +26,13 @@ inline fun <T, K, V, M : MutableMap<in K, MutableSet<V>>> Iterable<T>.groupBySet
 }
 
 fun Point.coord(): String = "($x, $y)"
+
+fun min(a: Int, b: Int, vararg nums: Int) =
+    nums.fold(kotlin.math.min(a, b)) { acc, c -> kotlin.math.min(acc, c) }
+
+fun max(a: Int, b: Int, vararg nums: Int) =
+    nums.fold(kotlin.math.max(a, b)) { acc, c -> kotlin.math.max(acc, c) }
+
+@Suppress("UNCHECKED_CAST")
+fun <T : Any> Sequence<T?>.untilFirstNull(): Sequence<T> =
+    takeWhile { it != null } as Sequence<T>
